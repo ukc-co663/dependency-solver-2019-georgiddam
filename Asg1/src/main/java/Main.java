@@ -1,8 +1,6 @@
 package depsolver;
 import java.io.*;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -17,9 +15,12 @@ public class Main {
 	private static final Pattern dependancyConflictPattern = Pattern.compile("([A-Z])(?:([<>]?=?)(\\d+(?:\\.\\d+)*))?");
 	
 	public static void main(String[] args) throws IOException {
-		String repo = readFile(args[0]);
-		String initial = readFile(args[1]);
-		String constraint = readFile(args[2]);
+//		String repo = readFile(args[0]);
+//		String initial = readFile(args[1]);
+//		String constraint = readFile(args[2]);
+		String repo = readFile("2");
+		String initial = readFile("3");
+		String constraint = readFile("4");
 		JsonElement jsonParsed = parseJson(repo, initial, constraint);
 		createPackages(jsonParsed);
 	}
