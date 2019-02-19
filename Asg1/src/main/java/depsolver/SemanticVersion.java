@@ -1,3 +1,4 @@
+package depsolver;
 import java.util.Arrays;
 
 public class SemanticVersion implements Comparable<SemanticVersion> {
