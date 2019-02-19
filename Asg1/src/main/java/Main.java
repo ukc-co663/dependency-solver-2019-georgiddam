@@ -41,8 +41,9 @@ public class Main {
 		
 		JsonParser parser = new JsonParser();
 //		InputStream inputStream = Main.class.getClassLoader().getResourceAsStream("../example-0/repository.json");
-		System.out.println(repo);
+		System.out.println("What repo is this giving me \n" + repo);
 		File file = new File(repo);
+		System.out.println("What file is this giving me \n" + file);
 		InputStream inputStream = new FileInputStream(file);
 		System.out.println(inputStream);
 		Reader reader = new InputStreamReader(inputStream);
@@ -168,6 +169,7 @@ public class Main {
 	}
 	
 	  static String readFile(String filename) throws IOException {
+		  	System.out.println("File Name Parsed is" + filename);
 		    BufferedReader br = new BufferedReader(new FileReader(filename));
 		    StringBuilder sb = new StringBuilder();
 		    br.lines().forEach(line -> sb.append(line));
