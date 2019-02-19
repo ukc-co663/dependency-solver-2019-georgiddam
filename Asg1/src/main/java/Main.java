@@ -1,6 +1,6 @@
 package depsolver;
-import java.io.*
-import java.util.*
+import java.io.*;
+import java.util.*;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -11,11 +11,7 @@ import java.io.FileReader;
 import java.io.IOException;
 
 public class Main {
-	
-//	
-	
-	
-	
+
 	private static final Pattern dependancyConflictPattern = Pattern.compile("([A-Z])(?:([<>]?=?)(\\d+(?:\\.\\d+)*))?");
 	
 	public static void main(String[] args) throws IOException {
