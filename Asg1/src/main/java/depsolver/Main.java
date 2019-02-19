@@ -14,7 +14,6 @@ import java.io.IOException;
 
 public class Main {
 
-//	Matching patters for the json parse splits
 	private static final Pattern dependancyConflictPattern = Pattern.compile("([A-Z])(?:([<>]?=?)(\\d+(?:\\.\\d+)*))?");
 	
 	public static void main(String[] args) throws IOException {
@@ -29,13 +28,13 @@ public class Main {
 		
 		JsonParser parser = new JsonParser();
 //		InputStream inputStream = Main.class.getClassLoader().getResourceAsStream("../example-0/repository.json");
-		System.out.println("What repo is this giving me \n" + repo);
+//		System.out.println("What repo is this giving me \n" + repo);
 //		File file = new File(repo);
 //		System.out.println("What file is this giving me \n" + file);
-		InputStream inputStream = Main.class.getClassLoader().getResourceAsStream(repo);
-		System.out.println(inputStream);
-		Reader reader = new InputStreamReader(inputStream);
-		JsonElement rootElement = parser.parse(reader);
+//		InputStream inputStream = Main.class.getClassLoader().getResourceAsStream(r);
+//		System.out.println(inputStream);
+//		Reader reader = new InputStreamReader(inputStream);
+		JsonElement rootElement = parser.parse(repo);
 		
 		return rootElement;
 	}
