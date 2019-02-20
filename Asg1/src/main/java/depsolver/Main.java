@@ -21,19 +21,20 @@ public class Main {
 		String initial = readFile(args[1]);
 		String constraint = readFile(args[2]);
 		JsonElement jsonParsed = parseJson(repo, initial, constraint);
-		createPackages(jsonParsed);
+		List<Package> allTasks = createPackages(jsonParsed);
+		startRun(allTasks, constraint);
 	}
 	
+	  static String readFile(String filename) throws IOException {
+		  	System.out.println("File Name Parsed is " + filename);
+		    BufferedReader br = new BufferedReader(new FileReader(filename));
+		    StringBuilder sb = new StringBuilder();
+		    br.lines().forEach(line -> sb.append(line));
+		    return sb.toString();
+	  }
+	
 	private static JsonElement parseJson(String repo, String initial, String constraint) throws FileNotFoundException {
-		
 		JsonParser parser = new JsonParser();
-//		InputStream inputStream = Main.class.getClassLoader().getResourceAsStream("../example-0/repository.json");
-//		System.out.println("What repo is this giving me \n" + repo);
-//		File file = new File(repo);
-//		System.out.println("What file is this giving me \n" + file);
-//		InputStream inputStream = Main.class.getClassLoader().getResourceAsStream(r);
-//		System.out.println(inputStream);
-//		Reader reader = new InputStreamReader(inputStream);
 		JsonElement rootElement = parser.parse(repo);
 		
 		return rootElement;
@@ -45,59 +46,81 @@ public class Main {
 		String name;
 		String version = "0.0";
 		String symbol = "=";
-		Package newPackage;
-		
-		for (int k = 0; k < dependants.length; k++) {
-			String depends = dependants[k];
+//		create semantic version
+		SemanticVersion semVersion = new SemanticVersion(version);
+		for (int i = 0; i < dependants.length; i++) {
+			String depends = dependants[i];
 			
 			Matcher m = dependancyConflictPattern.matcher(depends);
-
 			if(m.matches()) {
 				name = m.group(1);
-				symbol = m.group(2);
-//				If there is no version, just equate for = 0.0
+//				If there is a symbol, add it
+				if (!(m.group(2) == null)) {
+					symbol = m.group(2);
+				}
+//				If there is a version, make it semantic
 				if (!(m.group(3) == null)) {
-					version = m.group(3);
-				}
-			
-				for (int i = 0; i < allTasks.size(); i++) {
-					
-//					We can get a case where we have package of 3.2 and then a dependency of package <3.2 so we need to remove those who are exactly the same version only
-					if(allTasks.get(i).name.equals(name) && allTasks.get(i).version.equals(version) && symbol.equals("=")) {
-						
-						System.out.println( "Skip package " + name + version +  symbol);
-						allTasks.remove(i);
-					} 
+					semVersion = new SemanticVersion(m.group(3));
 				}
 				
 				
-				newPackage = new Package(name, version, symbol);		
-				allTasks.add(newPackage);
-				combinedDependants.add(newPackage);
-			
-			}
-			
-			for (int i = 0; i < allTasks.size(); i++) {
-//				Adding Dependency or Conflict, final symbol is to check that the current symbol is not the same as the one we are trying to add as conflict or dependency
-				if(allTasks.get(i).name.equals(currentJson.name) && allTasks.get(i).version.equals(currentJson.version) && !(allTasks.get(i).symbol.equals(symbol))) {
-//					System.out.println();
-//					If its a dependent add as a dependent
-					if(isDep) {
-						allTasks.get(i).addDependants(pos, combinedDependants);
-//					Else add as a conflict
-					} else {
-						
-						allTasks.get(i).addConflict(combinedDependants.get(0));
+/*				
+				Start looping through all tasks, check if the name of constraint/dependency 
+				matches to that of inside the list.
+				Once it does, look at its symbol and based on that, use the semVersion class
+				to compare and based on results, add to the dependency list
+*/
+				for (int j = 0; j < allTasks.size(); j++) {
+					Package tempTask = allTasks.get(j);
+					if(tempTask.name.equals(name)) {
+						if(symbol.equals(">=")) {
+							int result = tempTask.semVersion.compareTo(semVersion);
+							if(result == 0 || result == 1) {
+								combinedDependants.add(tempTask);
+							}
+						}
+						else if(symbol.equals("=")) {
+							combinedDependants.add(tempTask);
+						}
+						else if(symbol.equals(">")) {
+							int result = tempTask.semVersion.compareTo(semVersion);
+							if(result == 1) {
+								combinedDependants.add(tempTask);
+							}
+						}
+						else if(symbol.equals("<")) {
+							int result = tempTask.semVersion.compareTo(semVersion);
+							if(result == -1) {
+								combinedDependants.add(tempTask);
+							}
+						}
+						else if(symbol.equals("<=")) {
+							int result = tempTask.semVersion.compareTo(semVersion);
+							if(result == -1 || result == 0) {
+								combinedDependants.add(tempTask);
+							}
+						} else {
+							System.out.println("Should never get here, what is my symbol " + symbol);
+						}
 					}
 				}
 			}
+			
+//			If its a dependency
+			if(isDep) {
+				currentJson.addDependants(pos, combinedDependants);
+//			Else add as a conflict
+			} else {
+				for (int j = 0; j < combinedDependants.size(); j++) {
+					currentJson.addConflict(combinedDependants.get(j));
+				}
+			}
 		
-				
 		}
 
 	}
 	
-	private static void createPackages(JsonElement json) {
+	private static List<Package> createPackages(JsonElement json) {
 		List<Package> allTasks = new ArrayList<>();
 		Gson gson = new Gson();
 		Package[] finalPackage = gson.fromJson(json, Package[].class);
@@ -109,11 +132,9 @@ public class Main {
         }
 
 //		Using finalPackage here because dependencies are still in there
-
 		for (Package e: finalPackage) {
 		
 //			Dependents
-//			System.out.println(Arrays.deepToString(e.depends));
 			if (Arrays.deepToString(e.depends) != "null") {
 	        	for (int i = 0; i < e.depends.length; i++) {
 	        		String[] dependants = new String[e.depends[i].length];
@@ -135,33 +156,29 @@ public class Main {
         }    
 		
 		
-		StringBuilder results = new StringBuilder();
+
 		
+		
+		for (int i = 0; i < allTasks.size(); i++) {
+//			Shows me the Linked Dependencies in the end
+			System.out.println(allTasks.get(i));
+			
+		}
+//		
+		return allTasks;
+		
+	}
+	
+	public static void startRun(List<Package> allTasks, String constraint) {
+//		Temp run result
+//		TODO need to change this to use the array
+		StringBuilder results = new StringBuilder();
 		for (int i = 0; i < allTasks.size(); i++) {
 			Package task = allTasks.get(i);
 			if(task.name.equals("A")) {
 				task.run(results);
 			}
 		}
-		
 		System.out.println(results);
-		
-//		for (int i = 0; i < allTasks.size(); i++) {
-//
-//			System.out.println(allTasks.get(i));
-//			
-//		}
-//		
-		
 	}
-	
-	  static String readFile(String filename) throws IOException {
-		  	System.out.println("File Name Parsed is " + filename);
-		    BufferedReader br = new BufferedReader(new FileReader(filename));
-		    StringBuilder sb = new StringBuilder();
-		    br.lines().forEach(line -> sb.append(line));
-		    return sb.toString();
-	  }
 }
-
-

@@ -1,4 +1,3 @@
-package depsolver;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -11,9 +10,9 @@ class Package {
 	String symbol;
 	String name;
 	String version;
-	int size;
+	String size;
 	
-	
+//	int getSize = Integer.parseInt(size);
 	
 	String[][] depends;
 	
@@ -31,10 +30,11 @@ class Package {
 	
 	SemanticVersion semVersion;
 	
-	public Package(String name, String version, String symbol) {
+	public Package(String name, String version, String symbol, String size) {
 		this.name = name;
 		this.version = version;
 		this.symbol = symbol;
+		this.size = size;
 		init();
 		
 	}
@@ -44,9 +44,15 @@ class Package {
 //		semVersion(this.version);
 		dependantSet = new HashMap<>();
 		conflictsSet = new HashSet<>();
+		
 		if(this.symbol == null) {
 			this.symbol = "=";
 		}
+	}
+	
+	public int getSize() {
+//		System.out.println(size);
+		return Integer.valueOf(size);
 	}
 	
 	public SemanticVersion getVersion() {
@@ -65,7 +71,7 @@ class Package {
 	public void run(StringBuilder result) {
 //		TODO This doesn't check at all at symbols, so I have no clue how it will actually work
 
-		System.out.println("Trying to install " + this.name + " With version " + this.semVersion);
+//		System.out.println("Trying to install " + this.name + " With version " + this.semVersion);
 //		If no dependencies and no conflicts, install module
 		boolean hasConflict = true;
 		boolean hasDepend = true;
@@ -79,19 +85,24 @@ class Package {
 			while(itr.hasNext()) {
 				if(itr.next().done != false) {
 					System.out.println("We found conflict with " + itr.next().name);
-					itr.next().uninstall();
+					itr.next().uninstall(result);
 				}
 			}
 			hasConflict = false;
 		}
 //		We already checked for conflicts, now we check if there are dependents to install those
 		if(!(this.dependantSet.size() < 1)) {
+			
 			for (int i = 0; i < dependantSet.size(); i++) {
+				int biggerSize = Integer.MAX_VALUE;
+				Package toRun = this;
 				for (int j = 0; j < dependantSet.get(i).size(); j++) {
-					System.out.println("Running package on dependancy " + dependantSet.get(i).get(j).name);
-					dependantSet.get(i).get(j).run(result);
+					if(biggerSize > dependantSet.get(i).get(j).getSize()) {
+						biggerSize = dependantSet.get(i).get(j).getSize();
+						toRun = dependantSet.get(i).get(j);
+					}
 				}
-				
+				toRun.run(result);
 			}
 			System.out.println("Finished installing dependancies");
 			hasDepend = false;
@@ -106,33 +117,24 @@ class Package {
 			
 		}
 		
-		result.append(this.name).append(" ");
+		result.append("+").append(this.name).append(this.symbol).append(this.version).append("\n");
 		
 	}
 	
 	
-	public void uninstall() {
+	public void uninstall(StringBuilder result) {
 		this.done = false;
+		result.append("+").append(this.name).append(this.symbol).append(this.version).append("\n");
 	}
-	
-//	public boolean canRun() {
-//		for (Package Package : depends) {
-//			if (!(Package.done)) {
-//				return false;
-//			}
-//		}
-//		return true;
-//	}
-	
 	
 	@Override
 	public String toString() {
-		return "Link Dependancies [name = " + name + ", version= " + this.semVersion + ", symbol = '" + symbol 
-			+ "' , dependants = [" + dependantSet.values().stream().map(l-> {
-			return l.stream().map(t -> (t.name + " = " + t.version)).collect(Collectors.joining(", ","[","]"));
+		return "Link Dependancies [name: " + name + ", version: " + this.semVersion + ", symbol: '" + symbol 
+			+ " Size: " + getSize() + "' , dependants: [" + dependantSet.values().stream().map(l-> {
+			return l.stream().map(t -> (t.name + ": " + t.symbol + t.semVersion )).collect(Collectors.joining(", ","[","]"));
 		}).collect(Collectors.joining(", ")) + "], "
-			+ "conflicts = [" + conflictsSet.stream().map(t->(t.name + " = " + t.semVersion)).collect(Collectors.joining(", ")) 
-			+ "]  done = " + done + "]";
+			+ "conflicts: [" + conflictsSet.stream().map(t->(t.name + ": " + t.symbol + t.semVersion)).collect(Collectors.joining(", ")) 
+			+ "]  done: " + done + "]";
 	}
 	
 }
