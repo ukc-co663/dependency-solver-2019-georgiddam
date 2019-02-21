@@ -1,3 +1,4 @@
+package depsolver;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -92,14 +93,27 @@ class Package {
 		}
 //		We already checked for conflicts, now we check if there are dependents to install those
 		if(!(this.dependantSet.size() < 1)) {
-			
 			for (int i = 0; i < dependantSet.size(); i++) {
 				int biggerSize = Integer.MAX_VALUE;
 				Package toRun = this;
+				boolean hasDeps = true;
 				for (int j = 0; j < dependantSet.get(i).size(); j++) {
-					if(biggerSize > dependantSet.get(i).get(j).getSize()) {
+//					If we already have a package that has no dependencies and we get another with no dependencies
+//					I am checking to get the one with the smaller size to be installed
+					if (!hasDeps && dependantSet.get(i).get(j).dependantSet.size() == 0) {
+						if (biggerSize > dependantSet.get(i).get(j).getSize()) {
+							biggerSize = dependantSet.get(i).get(j).getSize();
+							toRun = dependantSet.get(i).get(j);
+						}
+					}
+					else if (dependantSet.get(i).get(j).dependantSet.size() == 0) {
+						hasDeps = false;
 						biggerSize = dependantSet.get(i).get(j).getSize();
 						toRun = dependantSet.get(i).get(j);
+					} else if (biggerSize > dependantSet.get(i).get(j).getSize())  {
+						biggerSize = dependantSet.get(i).get(j).getSize();
+						toRun = dependantSet.get(i).get(j);
+						hasDeps = true;
 					}
 				}
 				toRun.run(result);
