@@ -29,7 +29,7 @@ class Package {
 	
 	HashSet<Package> conflictsSet;
 	
-	SemanticVersion semVersion;
+//	SemanticVersion semVersion;
 	
 	public Package(String name, String version, String symbol, String size) {
 		this.name = name;
@@ -41,7 +41,7 @@ class Package {
 	}
 	
 	public void init() {
-		semVersion = new SemanticVersion(this.version);
+//		semVersion = new SemanticVersion(this.version);
 //		semVersion(this.version);
 		dependantSet = new HashMap<>();
 		conflictsSet = new HashSet<>();
@@ -56,10 +56,14 @@ class Package {
 		return Integer.valueOf(size);
 	}
 	
-	public SemanticVersion getVersion() {
-		
-		return this.semVersion;
+	public String getVersion() {
+		return this.version;
 	}
+	
+//	public SemanticVersion getVersion() {
+//		
+//		return this.semVersion;
+//	}
 	
 	public void addDependants(Integer i, List<Package> dependant) {
 		dependantSet.put(i, dependant);
@@ -121,7 +125,7 @@ class Package {
 			System.out.println("Finished installing dependancies");
 			hasDepend = false;
 		} else {
-			System.out.println("No dependancies");
+//			System.out.println("No dependancies");
 			hasDepend = false;
 		}
 		
@@ -143,11 +147,11 @@ class Package {
 	
 	@Override
 	public String toString() {
-		return "Link Dependancies [name: " + name + ", version: " + this.semVersion + ", symbol: '" + symbol 
+		return "Link Dependancies [name: " + name + ", version: " + this.version + ", symbol: '" + symbol 
 			+ " Size: " + getSize() + "' , dependants: [" + dependantSet.values().stream().map(l-> {
-			return l.stream().map(t -> (t.name + ": " + t.symbol + t.semVersion )).collect(Collectors.joining(", ","[","]"));
+			return l.stream().map(t -> (t.name + ": " + t.symbol + t.version )).collect(Collectors.joining(", ","[","]"));
 		}).collect(Collectors.joining(", ")) + "], "
-			+ "conflicts: [" + conflictsSet.stream().map(t->(t.name + ": " + t.symbol + t.semVersion)).collect(Collectors.joining(", ")) 
+			+ "conflicts: [" + conflictsSet.stream().map(t->(t.name + ": " + t.symbol + t.version)).collect(Collectors.joining(", ")) 
 			+ "]  done: " + done + "]";
 	}
 	

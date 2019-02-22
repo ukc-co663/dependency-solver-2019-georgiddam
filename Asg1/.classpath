@@ -12,6 +12,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.buildship.core.gradleclasspathcontainer"/>
-	<classpathentry kind="lib" path="/home/georgiddam/Desktop/clone/dependency-solver-2019-georgiddam/Asg1/lib/gson-2.8.5.jar"/>
+	<classpathentry kind="lib" path="/home/georgiddam/Documents/Year3 Projects/dependency-solver-2019-georgiddam/Asg1/lib/gson-2.8.5.jar"/>
 	<classpathentry kind="output" path="bin/default"/>
 </classpath>

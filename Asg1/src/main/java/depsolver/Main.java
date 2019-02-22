@@ -1,8 +1,10 @@
 package depsolver;
 import java.io.*;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -14,23 +16,48 @@ import java.io.IOException;
 
 public class Main {
 
+	private static final Comparator<Package> PackageVersionComparator = new Comparator<>() {
+		
+		@Override
+		public int compare(Package arg0, Package arg1) {
+			
+			return arg1.version.compareTo(arg0.version);
+		}
+	};
 	private static final Pattern dependancyConflictPattern = Pattern.compile("([A-Z])(?:([<>]?=?)(\\d+(?:\\.\\d+)*))?");
-	
+	private static final Pattern toInstallPattern = Pattern.compile("\\[\\s*\"([+-])([\\w-]+)([<>]?=?)?(\\d+(?:\\.\\d+)*)?\"\\s*\\]");
 	public static void main(String[] args) throws IOException {
 		String repo = readFile(args[0]);
 		String initial = readFile(args[1]);
-		String constraint = readFile(args[2]);
-		JsonElement jsonParsed = parseJson(repo, initial, constraint);
+		String toInstall = readFile(args[2]);
+		JsonElement jsonParsed = parseJson(repo, initial, toInstall);
 		List<Package> allTasks = createPackages(jsonParsed);
-		startRun(allTasks, constraint);
+		Map<String, SortedSet<Package>> tasksMap = new HashMap<>();
+	
+		for (Package p: allTasks) {
+			String pName = p.name;
+			
+			SortedSet<Package> temp = tasksMap.get(pName);
+			if(temp == null) {
+				temp = new TreeSet<>(PackageVersionComparator);
+				tasksMap.put(pName, temp);
+			}
+			temp.add(p);
+			System.out.println(p);
+//			Shorter version of the above 6 lines
+//			tasksMap.computeIfAbsent(pName, _n -> new ArrayList<>()).add(p);			
+			
+		}
+		System.out.println();
+		
+		startRun(tasksMap, toInstall);
 	}
 	
 	  static String readFile(String filename) throws IOException {
-		  	System.out.println("File Name Parsed is " + filename);
 		    BufferedReader br = new BufferedReader(new FileReader(filename));
 		    StringBuilder sb = new StringBuilder();
 		    br.lines().forEach(line -> sb.append(line));
-		    return sb.toString();
+		    return sb.toString();	
 	  }
 	
 	private static JsonElement parseJson(String repo, String initial, String constraint) throws FileNotFoundException {
@@ -47,10 +74,10 @@ public class Main {
 		String version = "0.0";
 		String symbol = "=";
 //		create semantic version
-		SemanticVersion semVersion = new SemanticVersion(version);
+//		SemanticVersion semVersion = new SemanticVersion(version);
 		for (int i = 0; i < dependants.length; i++) {
 			String depends = dependants[i];
-			
+			System.out.println();
 			Matcher m = dependancyConflictPattern.matcher(depends);
 			if(m.matches()) {
 				name = m.group(1);
@@ -60,7 +87,7 @@ public class Main {
 				}
 //				If there is a version, make it semantic
 				if (!(m.group(3) == null)) {
-					semVersion = new SemanticVersion(m.group(3));
+					version = (m.group(3));
 				}
 				
 				
@@ -73,8 +100,9 @@ public class Main {
 				for (int j = 0; j < allTasks.size(); j++) {
 					Package tempTask = allTasks.get(j);
 					if(tempTask.name.equals(name)) {
+						int result = tempTask.version.compareTo(version);
 						if(symbol.equals(">=")) {
-							int result = tempTask.semVersion.compareTo(semVersion);
+							
 							if(result == 0 || result == 1) {
 								combinedDependants.add(tempTask);
 							}
@@ -83,19 +111,19 @@ public class Main {
 							combinedDependants.add(tempTask);
 						}
 						else if(symbol.equals(">")) {
-							int result = tempTask.semVersion.compareTo(semVersion);
+//							int result = tempTask.version.compareTo(version);
 							if(result == 1) {
 								combinedDependants.add(tempTask);
 							}
 						}
 						else if(symbol.equals("<")) {
-							int result = tempTask.semVersion.compareTo(semVersion);
+//							int result = tempTask.version.compareTo(version);
 							if(result == -1) {
 								combinedDependants.add(tempTask);
 							}
 						}
 						else if(symbol.equals("<=")) {
-							int result = tempTask.semVersion.compareTo(semVersion);
+//							int result = tempTask.version.compareTo(version);
 							if(result == -1 || result == 0) {
 								combinedDependants.add(tempTask);
 							}
@@ -154,31 +182,89 @@ public class Main {
 			}
 			
         }    
-		
-		
-
-		
-		
+				
 		for (int i = 0; i < allTasks.size(); i++) {
 //			Shows me the Linked Dependencies in the end
-			System.out.println(allTasks.get(i));
+//			System.out.println(allTasks.get(i));
 			
 		}
 //		
 		return allTasks;
 		
 	}
-	
-	public static void startRun(List<Package> allTasks, String constraint) {
-//		Temp run result
-//		TODO need to change this to use the array
-		StringBuilder results = new StringBuilder();
-		for (int i = 0; i < allTasks.size(); i++) {
-			Package task = allTasks.get(i);
-			if(task.name.equals("A")) {
-				task.run(results);
+//	Checks which packages to run and starts running them
+	public static void startRun(Map<String, SortedSet<Package>> tasksMap, String toInstall) {
+		
+		Matcher m = toInstallPattern.matcher(toInstall);
+		StringBuilder strBuilder = new StringBuilder();
+		while(m.find()) {
+//			System.out.println(m.group(1));
+//			System.out.println(m.group(2));
+			
+			String tempInstall = m.group(1);
+			String tempPackageName = m.group(2);
+			String tempSymbol = m.group(3);
+			String tempVersion = m.group(4);
+			
+			SortedSet<Package> tempPackage = tasksMap.get(tempPackageName);
+			
+			
+//			We check if a version exists, if not, then just run the value with highest version
+//			TODO I need to somehow check for all these available versions it might have, which ones to run
+			if(tempVersion == null) {
+				tempPackage.first().run(strBuilder);
+			} else {
+//				If it has a version, look at the comparator, run the first version which satisfies it
+//				TODO again, create a list of all the possible values, check which one has more/less dependencies to run that one
+				for (Package p : tempPackage) {
+					
+					int result = p.version.compareTo(tempVersion);
+				
+					if(tempSymbol == "=") {
+					
+						if(result == 0) {
+							p.run(strBuilder);
+							break;
+						}
+						
+					} else if(tempSymbol == "<") {
+						
+						if(result == -1) {
+							p.run(strBuilder);
+							break;
+						}
+						
+					} else if(tempSymbol == "<=") {
+						if(result == -1 || result == 0) {
+							p.run(strBuilder);
+							break;
+						}
+						
+					} else if(tempSymbol == ">") {
+						if(result == 1) {
+							p.run(strBuilder);
+							break;
+						}
+						
+					} else if(tempSymbol == ">=") {
+						if(result == 1 || result == 0) {
+							p.run(strBuilder);
+							break;
+						}
+						
+					} else {
+						System.out.println("Should never reach here");
+						break;
+					}
+				}
 			}
-		}
-		System.out.println(results);
+			System.out.println(strBuilder);	
+		};
+//		Prints out my sets
+//		for(Entry<String, SortedSet<Package>> e : tasksMap.entrySet()) {
+//			System.out.println(e.getKey());
+//			System.out.println(e.getValue().stream().map(Package::toString).collect(Collectors.joining(", ","[","]")));
+//		}
+		
 	}
 }
