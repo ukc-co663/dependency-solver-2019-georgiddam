@@ -74,23 +74,24 @@ class Package {
 	}
 	
 	public void run(StringBuilder result) {
-//		TODO This doesn't check at all at symbols, so I have no clue how it will actually work
-
+		if(this.done == true) return;
 //		System.out.println("Trying to install " + this.name + " With version " + this.semVersion);
 //		If no dependencies and no conflicts, install module
 		boolean hasConflict = true;
 		boolean hasDepend = true;
 		if(this.conflictsSet.size() < 1 && this.dependantSet.size() < 1) {
+			System.out.println("installed: " + this.name);
 			this.done = true;
-			result.append(this.name).append(" ");
+			result.append("+").append(this.name).append(this.symbol).append(this.version).append("\n");
 			return;
 //		If has conflicts, check if conflicts are installed, if they are, uninstall
 		} else if (!(this.conflictsSet.size() < 1) ) {
 			Iterator<Package> itr = conflictsSet.iterator();
 			while(itr.hasNext()) {
-				if(itr.next().done != false) {
-					System.out.println("We found conflict with " + itr.next().name);
-					itr.next().uninstall(result);
+				Package nextVal = itr.next();
+				if(nextVal.done != false) {
+//					System.out.println("We found conflict with " + itr.next().name);
+					nextVal.uninstall(result);
 				}
 			}
 			hasConflict = false;
@@ -122,7 +123,7 @@ class Package {
 				}
 				toRun.run(result);
 			}
-			System.out.println("Finished installing dependancies");
+//			System.out.println("Finished installing dependancies");
 			hasDepend = false;
 		} else {
 //			System.out.println("No dependancies");
@@ -130,11 +131,9 @@ class Package {
 		}
 		
 		if (!hasDepend && !hasConflict) {
-			System.out.println("All conflicts and dependencies are installed");
-			this.done = true;
-			
+//			System.out.println("All conflicts and dependencies are installed");
 		}
-		
+		this.done = true;
 		result.append("+").append(this.name).append(this.symbol).append(this.version).append("\n");
 		
 	}
@@ -142,7 +141,8 @@ class Package {
 	
 	public void uninstall(StringBuilder result) {
 		this.done = false;
-		result.append("+").append(this.name).append(this.symbol).append(this.version).append("\n");
+//		System.out.println("Unintsalling");
+		result.append("-").append(this.name).append(this.symbol).append(this.version).append("\n");
 	}
 	
 	@Override
