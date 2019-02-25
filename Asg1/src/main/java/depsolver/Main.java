@@ -268,7 +268,6 @@ public class Main {
 				solver = solver.replace(packageString, toReplace);
 //				System.out.println(solver);
 			}
-			
 		}
 		solver = solver.replaceAll("\\.","");
 //		System.out.println(" What i get at the end: " + solver);

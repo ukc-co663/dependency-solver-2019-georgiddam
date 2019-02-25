@@ -58,20 +58,6 @@ class Package {
 	
 	public void addDependants(Integer i, List<Package> dependant) {
 		dependantSet.put(i, dependant);
-		if(dependant.size() > 1) {
-//			solver.append("(");
-		}
-		for (int j = 0; j < dependant.size(); j++) {
-//			String getString = dependant.get(j).name + dependant.get(j).version;
-			if (j == 0) {
-//				solver.append(getString);
-			} else {
-//				solver.append(" | ").append(getString);
-			}
-		}
-		if(dependant.size() > 1) {
-//			solver.append(")");
-		}
 	}
 	
 	public void addConflict(Package conflict) {
@@ -79,13 +65,9 @@ class Package {
 //		solver.append("~").append(conflict.name+conflict.version);
 	}
 	
-	public String addToBooleanString(String convertToBool) {
-//		this.converted = true;
-//		System.out.println("Print test ");
-		
+	public String addToBooleanString(String convertToBool) {		
 		for (int i = 0; i < this.dependantSet.size(); i++) { 
 			convertToBool += (" & ");
-//			if(this.dependantSet.get(i).size() > 1) {
 				convertToBool += ("(");
 //			}
 			int size = this.dependantSet.get(i).size();
@@ -98,13 +80,11 @@ class Package {
 				if(j<size-1) {
 					convertToBool += " | ";
 				}
-				
-			
-			
+						
 			}
-//			if(this.dependantSet.get(i).size() > 1) {
+			if(this.dependantSet.get(i).size() > 1) {
 				convertToBool += (")");
-//			}
+			}
 		}
 		
 		Iterator<Package> itr = conflictsSet.iterator();
@@ -116,7 +96,7 @@ class Package {
 			 
 		}
 		convertToBool += (")");
-//		System.out.println("Converted bool " + convertToBool);
+		System.out.println("Converted bool " + convertToBool);
 		return convertToBool;
 	}
 	
