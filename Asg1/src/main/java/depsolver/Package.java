@@ -1,5 +1,4 @@
 package depsolver;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -13,7 +12,9 @@ class Package {
 	String version;
 	String size;
 	
-//	int getSize = Integer.parseInt(size);
+	boolean converted = false;
+	
+//	StringBuilder solver = new StringBuilder();
 	
 	String[][] depends;
 	
@@ -22,14 +23,11 @@ class Package {
 	boolean done = false;
 	
 	boolean hasVersion;
-	
-//	Float versionInt;
-	
+	boolean isRequired = false;
+
 	HashMap<Integer, List<Package>> dependantSet;
 	
 	HashSet<Package> conflictsSet;
-	
-//	SemanticVersion semVersion;
 	
 	public Package(String name, String version, String symbol, String size) {
 		this.name = name;
@@ -38,11 +36,9 @@ class Package {
 		this.size = size;
 		init();
 		
-	}
+	} 
 	
 	public void init() {
-//		semVersion = new SemanticVersion(this.version);
-//		semVersion(this.version);
 		dependantSet = new HashMap<>();
 		conflictsSet = new HashSet<>();
 		
@@ -52,98 +48,189 @@ class Package {
 	}
 	
 	public int getSize() {
-//		System.out.println(size);
 		return Integer.valueOf(size);
 	}
 	
 	public String getVersion() {
 		return this.version;
 	}
-	
-//	public SemanticVersion getVersion() {
-//		
-//		return this.semVersion;
-//	}
+
 	
 	public void addDependants(Integer i, List<Package> dependant) {
 		dependantSet.put(i, dependant);
+		if(dependant.size() > 1) {
+//			solver.append("(");
+		}
+		for (int j = 0; j < dependant.size(); j++) {
+//			String getString = dependant.get(j).name + dependant.get(j).version;
+			if (j == 0) {
+//				solver.append(getString);
+			} else {
+//				solver.append(" | ").append(getString);
+			}
+		}
+		if(dependant.size() > 1) {
+//			solver.append(")");
+		}
 	}
 	
 	public void addConflict(Package conflict) {
 		conflictsSet.add(conflict);
+//		solver.append("~").append(conflict.name+conflict.version);
 	}
 	
-	public void run(StringBuilder result) {
-		if(this.done == true) return;
-//		System.out.println("Trying to install " + this.name + " With version " + this.semVersion);
-//		If no dependencies and no conflicts, install module
-		boolean hasConflict = true;
-		boolean hasDepend = true;
-		if(this.conflictsSet.size() < 1 && this.dependantSet.size() < 1) {
-			System.out.println("installed: " + this.name);
-			this.done = true;
-			result.append("+").append(this.name).append(this.symbol).append(this.version).append("\n");
-			return;
-//		If has conflicts, check if conflicts are installed, if they are, uninstall
-		} else if (!(this.conflictsSet.size() < 1) ) {
-			Iterator<Package> itr = conflictsSet.iterator();
-			while(itr.hasNext()) {
-				Package nextVal = itr.next();
-				if(nextVal.done != false) {
-//					System.out.println("We found conflict with " + itr.next().name);
-					nextVal.uninstall(result);
+	public String addToBooleanString(String convertToBool) {
+//		this.converted = true;
+//		System.out.println("Print test ");
+		
+		for (int i = 0; i < this.dependantSet.size(); i++) { 
+			convertToBool += (" & ");
+//			if(this.dependantSet.get(i).size() > 1) {
+				convertToBool += ("(");
+//			}
+			int size = this.dependantSet.get(i).size();
+			for (int j = 0; j < this.dependantSet.get(i).size(); j++) {
+				convertToBool += ("(");
+				
+				convertToBool += (dependantSet.get(i).get(j).name+dependantSet.get(i).get(j).version);
+//				dependantSet.get(i).get(j).addToBooleanString(convertToBool);
+				
+				if(j<size-1) {
+					convertToBool += " | ";
 				}
+				
+			
+			
 			}
-			hasConflict = false;
-		}
-//		We already checked for conflicts, now we check if there are dependents to install those
-		if(!(this.dependantSet.size() < 1)) {
-			for (int i = 0; i < dependantSet.size(); i++) {
-				int biggerSize = Integer.MAX_VALUE;
-				Package toRun = this;
-				boolean hasDeps = true;
-				for (int j = 0; j < dependantSet.get(i).size(); j++) {
-//					If we already have a package that has no dependencies and we get another with no dependencies
-//					I am checking to get the one with the smaller size to be installed
-					if (!hasDeps && dependantSet.get(i).get(j).dependantSet.size() == 0) {
-						if (biggerSize > dependantSet.get(i).get(j).getSize()) {
-							biggerSize = dependantSet.get(i).get(j).getSize();
-							toRun = dependantSet.get(i).get(j);
-						}
-					}
-					else if (dependantSet.get(i).get(j).dependantSet.size() == 0) {
-						hasDeps = false;
-						biggerSize = dependantSet.get(i).get(j).getSize();
-						toRun = dependantSet.get(i).get(j);
-					} else if (biggerSize > dependantSet.get(i).get(j).getSize())  {
-						biggerSize = dependantSet.get(i).get(j).getSize();
-						toRun = dependantSet.get(i).get(j);
-						hasDeps = true;
-					}
-				}
-				toRun.run(result);
-			}
-//			System.out.println("Finished installing dependancies");
-			hasDepend = false;
-		} else {
-//			System.out.println("No dependancies");
-			hasDepend = false;
+//			if(this.dependantSet.get(i).size() > 1) {
+				convertToBool += (")");
+//			}
 		}
 		
-		if (!hasDepend && !hasConflict) {
-//			System.out.println("All conflicts and dependencies are installed");
+		Iterator<Package> itr = conflictsSet.iterator();
+		while(itr.hasNext()) {
+			Package nextVal = itr.next();
+			 convertToBool += (" & ~");
+			 convertToBool += (nextVal.name+nextVal.version);
+//			 convertToBool = nextVal.addToBooleanString(convertToBool);
+			 
 		}
-		this.done = true;
-		result.append("+").append(this.name).append(this.symbol).append(this.version).append("\n");
-		
+		convertToBool += (")");
+//		System.out.println("Converted bool " + convertToBool);
+		return convertToBool;
 	}
 	
 	
-	public void uninstall(StringBuilder result) {
-		this.done = false;
-//		System.out.println("Unintsalling");
-		result.append("-").append(this.name).append(this.symbol).append(this.version).append("\n");
-	}
+//	public boolean checkDependencies(StringBuilder result) {
+//		for (int i = 0; i < dependantSet.size(); i++) {
+//			int biggerSize = Integer.MAX_VALUE;
+//			Package toRun = this;
+//			boolean hasPriority = false;
+//			for (int j = 0; j < dependantSet.get(i).size(); j++) {
+////				If some package is already chosen
+//				if (!hasPriority && dependantSet.get(i).get(j).dependantSet.size() == 0) {
+//					if(toRun.conflictsSet.size() > dependantSet.get(i).get(j).conflictsSet.size()) {
+//						biggerSize = dependantSet.get(i).get(j).getSize();
+//						toRun = dependantSet.get(i).get(j);
+//					}
+//					if (biggerSize > dependantSet.get(i).get(j).getSize()) {
+//						biggerSize = dependantSet.get(i).get(j).getSize();
+//						toRun = dependantSet.get(i).get(j);
+//					}
+//				}
+////				Base cases
+////				If it has no dependencies, use that
+//				else if (dependantSet.get(i).get(j).dependantSet.size() == 0) {
+//					hasPriority = true;
+//					biggerSize = dependantSet.get(i).get(j).getSize();
+//					toRun = dependantSet.get(i).get(j);
+//					
+////					If it has no conflicts
+//				} else if (dependantSet.get(i).get(j).conflictsSet.size() == 0){
+//					hasPriority = true;
+//					biggerSize = dependantSet.get(i).get(j).getSize();
+//					toRun = dependantSet.get(i).get(j);
+////					If it has lowest size
+//				} else if (biggerSize > dependantSet.get(i).get(j).getSize())  {
+//					biggerSize = dependantSet.get(i).get(j).getSize();
+//					toRun = dependantSet.get(i).get(j);
+//					hasPriority = false;
+//				}
+//			}
+//			toRun.run(result);
+//		}
+//		return false;
+//	}
+	
+//	public boolean checkConflicts(StringBuilder result) {
+//		Iterator<Package> itr = conflictsSet.iterator();
+//		boolean toBreak = false;
+//		while(itr.hasNext()) {
+//			Package nextVal = itr.next();
+//			if(nextVal.done != false) {
+//				if(!nextVal.isRequired) {
+//					nextVal.uninstall(result);
+//					toBreak = false;
+//				} else {
+//					toBreak = true;
+//				}
+//			} else {
+//				toBreak = false;;
+//			}
+//			if (toBreak) {
+////				Exit the loop, return false
+//				break;
+//			}
+//		}
+//		return toBreak;
+//	}
+	
+//	public boolean run(StringBuilder result) {
+//		if(this.done == true) return true;
+////		If no dependencies and no conflicts, install module
+//		boolean hasConflict = true;
+//		boolean hasDepend = true;
+////		if no conflicts and no dependencies
+//		if(this.conflictsSet.size() < 1 && this.dependantSet.size() < 1) {
+//			this.isRequired = true;
+//			this.done = true;
+//			result.append("+").append(this.name).append(this.symbol).append(this.version).append("\n");
+//			return true;
+//		}
+////		If has conflicts, check if conflicts are installed, if they are, uninstall
+//		if (this.conflictsSet.size() > 0) {
+//			hasConflict = checkConflicts(result);
+//		} else {
+//			hasConflict = false;
+//		}
+////		We already checked for conflicts, now we check if there are dependents to install those
+//		if(this.dependantSet.size() > 0) {
+//			hasDepend = checkDependencies(result);
+//		} else {
+//			hasDepend = false;
+//		}
+//		
+//		if (!hasDepend && !hasConflict) {
+//			this.isRequired = true;
+//			this.done = true;
+//			result.append("+").append(this.name).append(this.symbol).append(this.version).append("\n");
+//			return true;
+//		} else {
+//			System.out.println("Broken");
+//			return false;
+//		}
+//	}
+	
+	
+//	public boolean uninstall(StringBuilder result) {
+//		if(isRequired) {
+//			System.out.println(this.name + " Is Required somewhere else");
+//			return false;
+//		}
+//		this.done = false;
+//		result.append("-").append(this.name).append(this.symbol).append(this.version).append("\n");
+//		return true;
+//	}
 	
 	@Override
 	public String toString() {

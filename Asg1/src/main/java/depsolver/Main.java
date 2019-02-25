@@ -6,13 +6,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.logicng.datastructures.Assignment;
+import org.logicng.datastructures.Tristate;
+import org.logicng.formulas.Formula;
+import org.logicng.formulas.FormulaFactory;
+import org.logicng.io.parsers.ParserException;
+import org.logicng.io.parsers.PropositionalParser;
+import org.logicng.solvers.MiniSat;
+import org.logicng.solvers.SATSolver;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 
 public class Main {
 
@@ -27,7 +32,12 @@ public class Main {
 	private static final Pattern dependancyConflictPattern = Pattern.compile("([\\w-.\\d+]+)(?:([<>]?=?)(\\d+(?:\\.\\d+)*))?");
 	private static final Pattern toInstallPattern = Pattern.compile("\"([+-])?([\\w-]+)([<>]?=?)?(\\d+(?:\\.\\d+)*)?\"");
 	private static final Pattern toInitialPattern = Pattern.compile("\"([\\w-]+)([<>]?=?)?(\\d+(?:\\.\\d+)*)?\"");
-	public static void main(String[] args) throws IOException {
+	
+	private static List<Package> allTasks = new ArrayList<>(); 
+	
+	private static String solver = "(";
+	
+	public static void main(String[] args) throws IOException, ParserException {
 		String repo = readFile(args[0]);
 		String initial = readFile(args[1]);
 		initial = initial.replaceAll("\\s+","");
@@ -50,7 +60,7 @@ public class Main {
 		}
 		
 		JsonElement jsonParsed = parseJson(repo);
-		List<Package> allTasks = createPackages(jsonParsed, initialArr);
+		allTasks = createPackages(jsonParsed, initialArr);
 		Map<String, SortedSet<Package>> tasksMap = new HashMap<>();
 	
 		for (Package p: allTasks) {
@@ -70,6 +80,28 @@ public class Main {
 //		System.out.println();
 		
 		startRun(tasksMap, toInstallArr);
+//		System.out.println(Arrays.toString(toInstallArr));
+		System.out.println("Solver is: " + solver);
+		final FormulaFactory f = new FormulaFactory();
+		final PropositionalParser p = new PropositionalParser(f);
+		final Formula formula = p.parse(solver);
+		System.out.println(formula);
+		
+	    final SATSolver miniSat = MiniSat.miniSat(f);
+	    miniSat.add(formula);
+	    final Tristate result = miniSat.sat();
+	    List<Assignment> allPossibleResults = miniSat.enumerateAllModels();
+	    
+	    System.out.println("All results " + allPossibleResults);
+	    
+	    
+//		final Formula formula = p.parse("(B32 | C1) & D1031 & ~B30 & ~B32 & ~B32");
+//		System.out.println("What is+ " + formulaSolver);
+//		System.out.println("What is formula" + formula);
+	}
+	
+	static void convertPackageToBool(String[] toInstall) {
+		
 	}
 	
 	  static String readFile(String filename) throws IOException {
@@ -88,88 +120,64 @@ public class Main {
 	
 //	Add dependencies and constraints
 	private static void addDependAndConflict(String[] dependants, Package currentJson, List<Package> allTasks, boolean isDep, int pos) { 
-		
-		List<Package> combinedDependants = new ArrayList<>();
-		String name;
-		String version = "0.0";
-		String symbol = "=";
-		for (int i = 0; i < dependants.length; i++) {
-			String depends = dependants[i];;
-			Matcher m = dependancyConflictPattern.matcher(depends);
-			if(m.matches()) {
-//				System.out.println("Matching: " +  m.group(0) + " | " + m.group(1) + " | " + m.group(2) + " | " + m.group(3) + "\"");
-				name = m.group(1);
-				
-//				If there is a symbol, add it
-				if (!(m.group(2) == null)) {
-					symbol = m.group(2);
-				}
-//				If there is a version, make it semantic
-				if (!(m.group(3) == null)) {
-					version = (m.group(3));
-				}
-				
-				
-/*				
-				Start looping through all tasks, check if the name of constraint/dependency 
-				matches to that of inside the list.
-				Once it does, look at its symbol and based on that, use the semVersion class
-				to compare and based on results, add to the dependency list
-*/
-				for (int j = 0; j < allTasks.size(); j++) {
-					Package tempTask = allTasks.get(j);
-					if(tempTask.name.equals(name)) {
-						int result = tempTask.version.compareTo(version);
-						
-						if(symbol.equals("=")) {
-							combinedDependants.add(tempTask);
-						} 
-						
-//						DONT ADD BREAKS! I KEEP FORGETTING AND ADDING AND IT BREAKS
-						
-						else if(symbol.equals(">=")) {
-							if(result == 0 || result == 1) {
-								combinedDependants.add(tempTask);
-//								break;
-							}
-						}
-						else if(symbol.equals(">")) {
-							if(result == 1) {
-								combinedDependants.add(tempTask);
-//								break;
-							}
-						}
-						else if(symbol.equals("<")) {
-							if(result == -1) {
-								combinedDependants.add(tempTask);
-//								break;
-							}
-						}
-						else if(symbol.equals("<=")) {
-							if(result == -1 || result == 0) {
-								combinedDependants.add(tempTask);
-//								break;
-							}
-						} else {
-							System.out.println("Should never get here, what is my pattern match: \"" +  m.group(0) + " | " + m.group(1) + " | " + m.group(2) + " | " + m.group(3) + "\"");
-							break;
-						}
-					}
-				}
-			}
-//			If its a dependency
-			if(isDep) {
-				currentJson.addDependants(pos, combinedDependants);
-//			Else add as a conflict
-			} else {
-				for (int j = 0; j < combinedDependants.size(); j++) {
-					currentJson.addConflict(combinedDependants.get(j));
-				}
-			}
-		
-		}
-
-	}
+        List<Package> combinedDependants = new ArrayList<>();
+        String name;
+        String version = "0.0";
+        String symbol = "=";
+        for (int i = 0; i < dependants.length; i++) {
+            String depends = dependants[i];;
+            Matcher m = dependancyConflictPattern.matcher(depends);
+            if(m.matches()) {
+//                System.out.println("Matching: " +  m.group(0) + " | " + m.group(1) + " | " + m.group(2) + " | " + m.group(3) + "");
+                name = m.group(1);
+                if (!(m.group(2) == null)) {
+                    symbol = m.group(2);
+                }
+                if (!(m.group(3) == null)) {
+                    version = (m.group(3));
+                }
+                
+                for (int j = 0; j < allTasks.size(); j++) {
+                    Package tempTask = allTasks.get(j);
+                    if(tempTask.name.equals(name)) {
+                        int result = tempTask.version.compareTo(version);
+                        if(symbol.equals("=")) {
+                            combinedDependants.add(tempTask);
+                        }
+                        else if(symbol.equals(">=")) {
+                            if(result == 0 || result > 0) {
+                                combinedDependants.add(tempTask);
+                            }
+                        }
+                        else if(symbol.equals(">")) {
+                            if(result > 0) {
+                                combinedDependants.add(tempTask);
+                            }
+                        }
+                        else if(symbol.equals("<")) {
+                            if(result < 0) {
+                                combinedDependants.add(tempTask);
+                            }
+                        }
+                        else if(symbol.equals("<=")) {
+                            if(result < 0 || result == 0) {
+                                combinedDependants.add(tempTask);
+                            }
+                        }
+                    }
+                }
+            }
+//            If its a dependency
+            if(isDep) {
+                currentJson.addDependants(pos, combinedDependants);
+//            Else add as a conflict
+            } else {
+                for (int j = 0; j < combinedDependants.size(); j++) {
+                    currentJson.addConflict(combinedDependants.get(j));
+                }
+            }
+        }
+    }
 	
 	private static List<Package> createPackages(JsonElement json, String[] initialArr) {
 		List<Package> allTasks = new ArrayList<>();
@@ -190,8 +198,6 @@ public class Main {
 			}
 			
 		}
-
-		
 
 //		Add all packages to a list, including dependents
 		for (Package e: finalPackage) {
@@ -216,19 +222,24 @@ public class Main {
 					for (int j = 0; j < e.depends[i].length; j++) {	
 						dependants[j] = e.depends[i][j];
 					}	
+//					System.out.println("What is e: " + dependants[0]);
 					addDependAndConflict(dependants, e, allTasks, true, i);
 	        	}
 			}
 			
 //			Add to Constraints
+//			System.out.println("Looking at: " + e.name + e.version);
+//			System.out.println("Check conflicts: " +Arrays.deepToString(e.conflicts));
 			if (Arrays.deepToString(e.conflicts) != "null") {
 				for (int i = 0; i < e.conflicts.length; i++) {
 					String[] conflicts = {e.conflicts[i]};
+//					System.out.println(e.conflicts[i]);
 					addDependAndConflict(conflicts, e, allTasks, false, i);
 				}
 			}
 			
-        }    
+        }   
+//		System.out.println(solver.substring(0, solver.length() -2));
 				
 //		for (int i = 0; i < allTasks.size(); i++) {
 //			Shows me the Linked Dependencies in the end
@@ -239,13 +250,41 @@ public class Main {
 		return allTasks;
 		
 	}
+	
+	public static void expandString(Package packageToCheck) {
+		for (int i = 0; i < allTasks.size(); i++) {
+			String toReplace = "";
+			
+			Package getPackage = allTasks.get(i); 
+			
+			String packageString = getPackage.name+getPackage.version;
+			String toInstallString = packageToCheck.name + packageToCheck.version;
+			toReplace += packageString + " ";
+			
+			toReplace += getPackage.addToBooleanString("");
+
+			if(!packageString.equals(toInstallString)) {
+//				System.out.println( "toReplacE: " + toReplace);
+				solver = solver.replace(packageString, toReplace);
+//				System.out.println(solver);
+			}
+			
+		}
+		solver = solver.replaceAll("\\.","");
+//		System.out.println(" What i get at the end: " + solver);
+	}
+	
+	
+	
+	
 //	Checks which packages to run and starts running them
 	public static void startRun(Map<String, SortedSet<Package>> tasksMap, String[] toInstallArr) {
-		
+		StringBuilder strBuilder = new StringBuilder();
+		List<Package> toInstallList = new ArrayList<>();
+		List<Package> toRemoveList = new ArrayList<>();
 		for (int i = 0; i < toInstallArr.length; i++) {
-//			System.out.println(toInstallArr[0]);
 			Matcher m = toInstallPattern.matcher(toInstallArr[i]);
-			StringBuilder strBuilder = new StringBuilder();
+			
 			if(m.matches()) {
 
 				String tempInstall = m.group(1);
@@ -255,14 +294,18 @@ public class Main {
 				
 				SortedSet<Package> tempPackage = tasksMap.get(tempPackageName);
 				
-				
 	//			We check if a version exists, if not, then just run the value with highest version
 	//			TODO I need to somehow check for all these available versions it might have, which ones to run
 				if(tempVersion == null) {
 					if(tempInstall.equals("+")) {
-						tempPackage.first().run(strBuilder);
+						toInstallList.add(tempPackage.first());
+						String getStr = tempPackage.first().name+tempPackage.first().version;
+						solver += tempPackage.first().addToBooleanString(getStr);
+						
+						expandString(tempPackage.first());
 					} else {
-						tempPackage.first().uninstall(strBuilder);
+						toRemoveList.add(tempPackage.first());
+//						tempPackage.first().uninstall(strBuilder);
 					}
 				} else {
 	//				If it has a version, look at the comparator, run the first version which satisfies it
@@ -275,53 +318,86 @@ public class Main {
 						
 							if(result == 0) {
 								if(tempInstall.equals("+")) {
-									p.run(strBuilder);
+//									toInstallList.add(p);
+//									p.run(strBuilder);
+//									System.out.println("What will it run" + p);
+									String getStr = (p.name+p.version);
+									solver += p.addToBooleanString(getStr);
+									expandString(p);
 								} else {
-									p.uninstall(strBuilder);
+//									toRemoveList.add(p);
+//									System.out.println("What will it run" + p);
+//									p.uninstall(strBuilder);
 								}
-								break;
+//								break;
 							}
 							
 						} else if(tempSymbol.equals( "<")) {
 							
 							if(result == -1) {
 								if(tempInstall.equals("+")) {
-									p.run(strBuilder);
+//									toInstallList.add(p);
+									String getStr = (p.name+p.version);
+									solver += p.addToBooleanString(getStr);
+									expandString(p);
+//									System.out.println("What will it run" + p);
+//									p.run(strBuilder);
 								} else {
-									p.uninstall(strBuilder);
+//									toRemoveList.add(p);
+//									System.out.println("What will it run" + p);
+//									p.uninstall(strBuilder);
 								}
-								break;
+//								break;
 							}
 							
 						} else if(tempSymbol.equals("<=")) {
 							if(result == -1 || result == 0) {
 								if(tempInstall.equals("+")) {
-									p.run(strBuilder);
+//									toInstallList.add(p);
+									String getStr = (p.name+p.version);
+									solver += p.addToBooleanString(getStr);
+									expandString(p);
+//									System.out.println("What will it run" + p);
+//									p.run(strBuilder);
 								} else {
-									p.uninstall(strBuilder);
+//									toRemoveList.add(p);
+//									p.uninstall(strBuilder);
 								}
-								break;
+//								break;
 							}
 							
 						} else if(tempSymbol.equals(">")) {
 							
 							if(result == 1) {
 								if(tempInstall.equals("+")) {
-									p.run(strBuilder);
+//									toInstallList.add(p);
+									String getStr = (p.name+p.version);
+									solver += p.addToBooleanString(getStr);
+									expandString(p);
+//									System.out.println("What will it run" + p);
+//									p.run(strBuilder);
 								} else {
-									p.uninstall(strBuilder);
+//									toRemoveList.add(p);
+//									System.out.println("What will it run" + p);
+//									p.uninstall(strBuilder);
 								}
-								break;
+//								break;
 							}
 							
 						} else if(tempSymbol.equals(">=")) {
 							if(result == 1 || result == 0) {
 								if(tempInstall.equals("+")) {
-									p.run(strBuilder);
+//									toInstallList.add(p);
+									String getStr = (p.name+p.version);
+									solver += p.addToBooleanString(getStr);
+									expandString(p);
+//									System.out.println("What will it run" + p);
+//									p.run(strBuilder);
 								} else {
-									p.uninstall(strBuilder);
+//									toRemoveList.add(p);
+//									p.uninstall(strBuilder);
 								}
-								break;
+//								break;
 							}
 							
 						} else {
@@ -331,9 +407,10 @@ public class Main {
 					}
 				}
 			
-				System.out.println(strBuilder);	
 			};
 		}
+//		checkIfInstalled(toInstallList, toRemoveList);
+//		System.out.println("Installed Packages:\n" + strBuilder);	
 //		Prints out my sets
 //		for(Entry<String, SortedSet<Package>> e : tasksMap.entrySet()) {
 //			System.out.println(e.getKey());
@@ -341,4 +418,18 @@ public class Main {
 //		}
 		
 	}
+	
+	
+	public static void checkIfInstalled(List<Package> toInstallList, List<Package> toRemoveList) {
+//		System.out.println("To Install List");
+//		for (int i = 0; i < toInstallList.size(); i++) {
+//			System.out.println(toInstallList.get(i));
+//		}
+//		System.out.println("To Remove List");
+//		for (int i = 0; i < toRemoveList.size(); i++) {
+//			System.out.println(toRemoveList.get(i));
+//		}
+		
+	}
+
 }
