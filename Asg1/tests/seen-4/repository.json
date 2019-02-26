@@ -1,0 +1,29 @@
+[ { "name" : "A"
+  , "version" : "1"
+  , "size" : 42
+  , "depends" : [["B", "C"]] }
+, { "name" : "B"
+  , "version" : "1"
+  , "size" : 10000
+  , "conflicts" : ["D"] }
+, { "name" : "C"
+  , "version" : "1"
+  , "size" : 1
+  , "depends" : [["F"]] 
+  , "conflicts" : ["D<4.3.5"] }
+, { "name" : "D"
+  , "version" : "4.3.5"
+  , "size" : 74 }
+, { "name" : "D"
+  , "version" : "4.3.6"
+  , "size" : 100 }
+, { "name" : "D"
+  , "version" : "4.2.9"
+  , "size" : 34 }
+, { "name" : "F"
+  , "version" : "1"
+  , "size" : 1 
+, "depends" : [["K"]]} 
+, { "name" : "K"
+  , "version" : "1"
+  , "size" : 1 }]

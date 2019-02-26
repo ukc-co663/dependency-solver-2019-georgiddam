@@ -1,4 +1,6 @@
 package depsolver;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -12,14 +14,12 @@ class Package {
 	String version;
 	String size;
 	
-	boolean converted = false;
-	
 //	StringBuilder solver = new StringBuilder();
 	
 	String[][] depends;
 	
 	String[] conflicts;
-	
+	boolean visited = false;
 	boolean done = false;
 	
 	boolean hasVersion;
@@ -65,40 +65,83 @@ class Package {
 //		solver.append("~").append(conflict.name+conflict.version);
 	}
 	
-	public String addToBooleanString(String convertToBool) {		
+	public HashMap<String, List<Package>> addToBooleanString(String convertToBool) {
+		List<Package>collectAllNext = new ArrayList<>();
+		HashMap<String, List<Package>> toReturn = new HashMap<>();
+		
+
 		for (int i = 0; i < this.dependantSet.size(); i++) { 
 			convertToBool += (" & ");
-				convertToBool += ("(");
-//			}
+			convertToBool += ("(");
+			
 			int size = this.dependantSet.get(i).size();
+			
+			String[] storeAll = new String[this.dependantSet.get(i).size()];
+			
+//			Check all deps, if there are OR's to manage them later
 			for (int j = 0; j < this.dependantSet.get(i).size(); j++) {
-				convertToBool += ("(");
+				Package getPackage = dependantSet.get(i).get(j);
+				collectAllNext.add(getPackage);
 				
-				convertToBool += (dependantSet.get(i).get(j).name+dependantSet.get(i).get(j).version);
-//				dependantSet.get(i).get(j).addToBooleanString(convertToBool);
-				
-				if(j<size-1) {
-					convertToBool += " | ";
+//				Check if there are deeper levels 
+				if(getPackage.dependantSet.size() > 0) {
+					System.out.println("The package has dependency, need to get another level low");
+//					System.out.println("On package: " + getPackage);
 				}
-						
+				
+				storeAll[j] = getPackage.name+getPackage.version;
 			}
-			if(this.dependantSet.get(i).size() > 1) {
-				convertToBool += (")");
+			
+			if(storeAll.length < 2) {
+			convertToBool += ("(");
+//			Add initial state
+				for (int k = 0; k < storeAll.length; k++) {
+					convertToBool += (dependantSet.get(i).get(k).name+dependantSet.get(i).get(k).version);
+					if(k<storeAll.length-1)
+						convertToBool += " | ";
+				}
+			convertToBool += (")");
+			} else {
+				System.out.println("Inside array: " + Arrays.toString(storeAll));
+				for (int j = 0; j < storeAll.length; j++) {
+					convertToBool += ("(");		
+					int position = 0;
+					for (int k = 0; k < storeAll.length; k++) {
+//						Add the not
+						if(position == j) {
+							convertToBool += "~";
+							convertToBool += (dependantSet.get(i).get(k).name+dependantSet.get(i).get(k).version);
+							if(k<storeAll.length-1)
+								convertToBool += " & ";
+						} else {
+							
+							convertToBool += (dependantSet.get(i).get(k).name+dependantSet.get(i).get(k).version);
+							if(k<storeAll.length-1)
+								convertToBool += " & ";
+						}
+						 position++;
+					}
+					
+					convertToBool += (")");
+					if(j<size-1)
+						convertToBool += " | ";
+				}
 			}
-		}
+			convertToBool += (")");
+			}
 		
+//		Conflicts
 		Iterator<Package> itr = conflictsSet.iterator();
 		while(itr.hasNext()) {
 			Package nextVal = itr.next();
 			 convertToBool += (" & ~");
 			 convertToBool += (nextVal.name+nextVal.version);
-//			 convertToBool = nextVal.addToBooleanString(convertToBool);
 			 
 		}
-		convertToBool += (")");
-		System.out.println("Converted bool " + convertToBool);
-		return convertToBool;
+		toReturn.put(convertToBool,  collectAllNext);
+		return toReturn;
 	}
+
 	
 	
 //	public boolean checkDependencies(StringBuilder result) {

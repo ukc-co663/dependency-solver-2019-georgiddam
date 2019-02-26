@@ -19,6 +19,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
+import depsolver.Package;
+
 public class Main {
 
 	private static final Comparator<Package> PackageVersionComparator = new Comparator<>() {
@@ -35,7 +37,9 @@ public class Main {
 	
 	private static List<Package> allTasks = new ArrayList<>(); 
 	
-	private static String solver = "(";
+	private static String solver = "";
+	
+	private static HashMap<String, List<Package>> getResults = new HashMap<>();
 	
 	public static void main(String[] args) throws IOException, ParserException {
 		String repo = readFile(args[0]);
@@ -50,6 +54,7 @@ public class Main {
 		toInstall = toInstall.replaceAll("\\[","");
 		toInstall = toInstall.replaceAll("\\]","");
 		
+		 
 		
 		
 		String[] toInstallArr;
@@ -76,16 +81,17 @@ public class Main {
 //			Shorter version of the above 6 lines
 //			tasksMap.computeIfAbsent(pName, _n -> new ArrayList<>()).add(p);			
 			
+			
 		}
 //		System.out.println();
 		
 		startRun(tasksMap, toInstallArr);
 //		System.out.println(Arrays.toString(toInstallArr));
-		System.out.println("Solver is: " + solver);
+//		System.out.println("Solver before formula is: " + solver);
 		final FormulaFactory f = new FormulaFactory();
 		final PropositionalParser p = new PropositionalParser(f);
 		final Formula formula = p.parse(solver);
-		System.out.println(formula);
+		System.out.println("Formula is              : " + formula);
 		
 	    final SATSolver miniSat = MiniSat.miniSat(f);
 	    miniSat.add(formula);
@@ -100,9 +106,6 @@ public class Main {
 //		System.out.println("What is formula" + formula);
 	}
 	
-	static void convertPackageToBool(String[] toInstall) {
-		
-	}
 	
 	  static String readFile(String filename) throws IOException {
 		    BufferedReader br = new BufferedReader(new FileReader(filename));
@@ -251,25 +254,84 @@ public class Main {
 		
 	}
 	
-	public static void expandString(Package packageToCheck) {
-		for (int i = 0; i < allTasks.size(); i++) {
-			String toReplace = "";
-			
-			Package getPackage = allTasks.get(i); 
-			
-			String packageString = getPackage.name+getPackage.version;
-			String toInstallString = packageToCheck.name + packageToCheck.version;
-			toReplace += packageString + " ";
-			
-			toReplace += getPackage.addToBooleanString("");
-
-			if(!packageString.equals(toInstallString)) {
-//				System.out.println( "toReplacE: " + toReplace);
-				solver = solver.replace(packageString, toReplace);
-//				System.out.println(solver);
+	public static void expandString(HashMap<String, List<Package>> getResults) {
+//		System.out.println("Set ");
+//		We did a loop, and now we assign the vars from getResults
+		List<Package> toItterate = new ArrayList<>();
+		for (Entry<String, List<Package>> p : getResults.entrySet()) {
+//			Set solver initially to the first set.
+			if(solver.equals("")) {
+				solver = p.getKey();
+				System.out.println("Solver is: " + solver);
 			}
+			toItterate = p.getValue();
 		}
-		solver = solver.replaceAll("\\.","");
+		
+		String getStrings = "";
+		List<Package> getPackages= new ArrayList<>();
+		
+		if(toItterate.size() == 0) {
+			solver = solver.replaceAll("\\.","");
+			System.out.println("Finished, what is solver: " + solver);
+		} else {
+//			Looping the values
+			for (int i = 0; i < toItterate.size(); i++) {
+				Package pack = toItterate.get(i);
+				HashMap<String, List<Package>> tempStorage = new HashMap<>();
+//				Store results on each itteration
+				tempStorage  = pack.addToBooleanString(pack.name+pack.version);
+//				extract results. for loop gets all the packs, 2nd loop gets the string
+				for (Entry<String, List<Package>> tempPack : tempStorage.entrySet()) {
+					getStrings = tempPack.getKey();
+					for (int j = 0; j < tempPack.getValue().size(); j++) {
+						getPackages.add(tempPack.getValue().get(j));
+					}
+				}
+//				int getLength = getStrings.length;
+				if(getStrings != "") {
+//					System.out.println("Replacing string with:" + pack.name+pack.version);
+//					System.out.println("String replacing with is " + getStrings);
+					solver = solver.replace(pack.name+pack.version, getStrings);
+//					System.out.println("Text is: ");
+//					System.out.println(solver);
+
+				}
+			}
+			
+		
+		
+		HashMap<String, List<Package>> getNewResults = new HashMap<>();
+		getNewResults.put(solver, getPackages);
+		expandString(getNewResults);
+		}
+//		for (int l = 0; l < 2; l++) {
+			
+		
+//		for (int i = 0; i < allTasks.size(); i++) {
+//			String toReplace = "";
+//			
+//			Package getPackage = allTasks.get(i); 
+//			
+//			String packageString = getPackage.name+getPackage.version;
+//			String toInstallString = packageToCheck.name + packageToCheck.version;
+//			toReplace += packageString + " ";
+//			
+//			toReplace += getPackage.addToBooleanString("");
+//			
+////			System.out.println("Looking for dont" + toReplace);
+////			
+////			System.out.println(toReplace.contains("dontReplaceThis"));
+//
+//			if(!toReplace.contains("dontReplaceThis")) {
+////				System.out.println("What am I replacing" + packageString);
+////				System.out.println("What am I replacing with:" + toReplace);
+////				System.out.println( "toReplacE: " + toReplace);
+//				solver = solver.replace(packageString, toReplace);
+////				System.out.println(solver);
+//			}
+//		}
+//		}
+//		solver = solver.replaceAll("\\.","");
 //		System.out.println(" What i get at the end: " + solver);
 	}
 	
@@ -299,9 +361,9 @@ public class Main {
 					if(tempInstall.equals("+")) {
 						toInstallList.add(tempPackage.first());
 						String getStr = tempPackage.first().name+tempPackage.first().version;
-						solver += tempPackage.first().addToBooleanString(getStr);
+						getResults = tempPackage.first().addToBooleanString(getStr);
 						
-						expandString(tempPackage.first());
+						expandString(getResults);
 					} else {
 						toRemoveList.add(tempPackage.first());
 //						tempPackage.first().uninstall(strBuilder);
@@ -321,8 +383,8 @@ public class Main {
 //									p.run(strBuilder);
 //									System.out.println("What will it run" + p);
 									String getStr = (p.name+p.version);
-									solver += p.addToBooleanString(getStr);
-									expandString(p);
+									getResults = p.addToBooleanString(getStr);
+									expandString(getResults);
 								} else {
 //									toRemoveList.add(p);
 //									System.out.println("What will it run" + p);
@@ -337,8 +399,8 @@ public class Main {
 								if(tempInstall.equals("+")) {
 //									toInstallList.add(p);
 									String getStr = (p.name+p.version);
-									solver += p.addToBooleanString(getStr);
-									expandString(p);
+									getResults = p.addToBooleanString(getStr);
+									expandString(getResults);
 //									System.out.println("What will it run" + p);
 //									p.run(strBuilder);
 								} else {
@@ -354,8 +416,8 @@ public class Main {
 								if(tempInstall.equals("+")) {
 //									toInstallList.add(p);
 									String getStr = (p.name+p.version);
-									solver += p.addToBooleanString(getStr);
-									expandString(p);
+									getResults = p.addToBooleanString(getStr);
+									expandString(getResults);
 //									System.out.println("What will it run" + p);
 //									p.run(strBuilder);
 								} else {
@@ -371,8 +433,8 @@ public class Main {
 								if(tempInstall.equals("+")) {
 //									toInstallList.add(p);
 									String getStr = (p.name+p.version);
-									solver += p.addToBooleanString(getStr);
-									expandString(p);
+									getResults = p.addToBooleanString(getStr);
+									expandString(getResults);
 //									System.out.println("What will it run" + p);
 //									p.run(strBuilder);
 								} else {
@@ -388,8 +450,8 @@ public class Main {
 								if(tempInstall.equals("+")) {
 //									toInstallList.add(p);
 									String getStr = (p.name+p.version);
-									solver += p.addToBooleanString(getStr);
-									expandString(p);
+									getResults = p.addToBooleanString(getStr);
+									expandString(getResults);
 //									System.out.println("What will it run" + p);
 //									p.run(strBuilder);
 								} else {
