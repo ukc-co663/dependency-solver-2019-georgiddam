@@ -279,7 +279,7 @@ public class Main {
 				Package pack = toItterate.get(i);
 				HashMap<String, List<Package>> tempStorage = new HashMap<>();
 //				Store results on each itteration
-				tempStorage  = pack.addToBooleanString(pack.name+pack.version);
+				tempStorage  = pack.addToBooleanString();
 //				extract results. for loop gets all the packs, 2nd loop gets the string
 				for (Entry<String, List<Package>> tempPack : tempStorage.entrySet()) {
 					getStrings = tempPack.getKey();
@@ -360,8 +360,8 @@ public class Main {
 				if(tempVersion == null) {
 					if(tempInstall.equals("+")) {
 						toInstallList.add(tempPackage.first());
-						String getStr = tempPackage.first().name+tempPackage.first().version;
-						getResults = tempPackage.first().addToBooleanString(getStr);
+//						String getStr = tempPackage.first().name+tempPackage.first().version;
+						getResults = tempPackage.first().addToBooleanString();
 						
 						expandString(getResults);
 					} else {
@@ -382,8 +382,8 @@ public class Main {
 //									toInstallList.add(p);
 //									p.run(strBuilder);
 //									System.out.println("What will it run" + p);
-									String getStr = (p.name+p.version);
-									getResults = p.addToBooleanString(getStr);
+//									String getStr = (p.name+p.version);
+									getResults = p.addToBooleanString();
 									expandString(getResults);
 								} else {
 //									toRemoveList.add(p);
@@ -398,8 +398,8 @@ public class Main {
 							if(result == -1) {
 								if(tempInstall.equals("+")) {
 //									toInstallList.add(p);
-									String getStr = (p.name+p.version);
-									getResults = p.addToBooleanString(getStr);
+//									String getStr = (p.name+p.version);
+									getResults = p.addToBooleanString();
 									expandString(getResults);
 //									System.out.println("What will it run" + p);
 //									p.run(strBuilder);
@@ -415,8 +415,8 @@ public class Main {
 							if(result == -1 || result == 0) {
 								if(tempInstall.equals("+")) {
 //									toInstallList.add(p);
-									String getStr = (p.name+p.version);
-									getResults = p.addToBooleanString(getStr);
+//									String getStr = (p.name+p.version);
+									getResults = p.addToBooleanString();
 									expandString(getResults);
 //									System.out.println("What will it run" + p);
 //									p.run(strBuilder);
@@ -432,8 +432,8 @@ public class Main {
 							if(result == 1) {
 								if(tempInstall.equals("+")) {
 //									toInstallList.add(p);
-									String getStr = (p.name+p.version);
-									getResults = p.addToBooleanString(getStr);
+//									String getStr = (p.name+p.version);
+									getResults = p.addToBooleanString();
 									expandString(getResults);
 //									System.out.println("What will it run" + p);
 //									p.run(strBuilder);
@@ -449,8 +449,8 @@ public class Main {
 							if(result == 1 || result == 0) {
 								if(tempInstall.equals("+")) {
 //									toInstallList.add(p);
-									String getStr = (p.name+p.version);
-									getResults = p.addToBooleanString(getStr);
+//									String getStr = (p.name+p.version);
+									getResults = p.addToBooleanString();
 									expandString(getResults);
 //									System.out.println("What will it run" + p);
 //									p.run(strBuilder);

@@ -65,70 +65,57 @@ class Package {
 //		solver.append("~").append(conflict.name+conflict.version);
 	}
 	
-	public HashMap<String, List<Package>> addToBooleanString(String convertToBool) {
+	public HashMap<String, List<Package>> addToBooleanString() {
+		String convertToBool = "";
 		List<Package>collectAllNext = new ArrayList<>();
-		HashMap<String, List<Package>> toReturn = new HashMap<>();
-		
+		HashMap<String, List<Package>> toReturn = new HashMap<>(); 
+		String thisPack = this.name+this.version;
 
+//		Do this first, because when it gets to the loop, this will never trigger and it will only have conflicts.
+		if(this.dependantSet.size() == 0) {
+			convertToBool += thisPack;		
+		}
+		
 		for (int i = 0; i < this.dependantSet.size(); i++) { 
-			convertToBool += (" & ");
-			convertToBool += ("(");
-			
 			int size = this.dependantSet.get(i).size();
-			
-			String[] storeAll = new String[this.dependantSet.get(i).size()];
-			
+			String[] storeAll = new String[size];
 //			Check all deps, if there are OR's to manage them later
 			for (int j = 0; j < this.dependantSet.get(i).size(); j++) {
 				Package getPackage = dependantSet.get(i).get(j);
 				collectAllNext.add(getPackage);
-				
-//				Check if there are deeper levels 
-				if(getPackage.dependantSet.size() > 0) {
-					System.out.println("The package has dependency, need to get another level low");
-//					System.out.println("On package: " + getPackage);
-				}
-				
 				storeAll[j] = getPackage.name+getPackage.version;
 			}
 			
-			if(storeAll.length < 2) {
+//			If size is of depencency is just 1, add it ((val & dep)&
 			convertToBool += ("(");
-//			Add initial state
+			
+			if(storeAll.length < 2) {	
+				convertToBool += ("(");
+				convertToBool += thisPack;			
+				convertToBool += (" & ");
 				for (int k = 0; k < storeAll.length; k++) {
 					convertToBool += (dependantSet.get(i).get(k).name+dependantSet.get(i).get(k).version);
+				}
+				convertToBool += (")");
+			} else {
+				for (int k = 0; k < storeAll.length; k++) {
+//						This is the OR's because they are the same dependencies
+					convertToBool += ("(");	
+					convertToBool += thisPack + " & ";
+					convertToBool += (dependantSet.get(i).get(k).name+dependantSet.get(i).get(k).version);
+					convertToBool += (")");	
 					if(k<storeAll.length-1)
 						convertToBool += " | ";
-				}
-			convertToBool += (")");
-			} else {
-				System.out.println("Inside array: " + Arrays.toString(storeAll));
-				for (int j = 0; j < storeAll.length; j++) {
-					convertToBool += ("(");		
-					int position = 0;
-					for (int k = 0; k < storeAll.length; k++) {
-//						Add the not
-						if(position == j) {
-							convertToBool += "~";
-							convertToBool += (dependantSet.get(i).get(k).name+dependantSet.get(i).get(k).version);
-							if(k<storeAll.length-1)
-								convertToBool += " & ";
-						} else {
-							
-							convertToBool += (dependantSet.get(i).get(k).name+dependantSet.get(i).get(k).version);
-							if(k<storeAll.length-1)
-								convertToBool += " & ";
-						}
-						 position++;
-					}
-					
-					convertToBool += (")");
-					if(j<size-1)
-						convertToBool += " | ";
+					System.out.println("Multiple dependants " + convertToBool);
 				}
 			}
+			
 			convertToBool += (")");
+//			This is an AND because its individual dependecies
+			if(i< this.dependantSet.size()-1) {
+				convertToBool += (" & ");
 			}
+		}
 		
 //		Conflicts
 		Iterator<Package> itr = conflictsSet.iterator();
