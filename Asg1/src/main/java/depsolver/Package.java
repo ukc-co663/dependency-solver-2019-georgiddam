@@ -14,6 +14,8 @@ class Package {
 	String version;
 	String size;
 	
+//	boolean visited = false;
+	
 //	StringBuilder solver = new StringBuilder();
 	
 	String[][] depends;
@@ -62,21 +64,25 @@ class Package {
 	
 	public void addConflict(Package conflict) {
 		conflictsSet.add(conflict);
-//		solver.append("~").append(conflict.name+conflict.version);
 	}
 	
 	public HashMap<String, List<Package>> addToBooleanString() {
+		
+		
 		String convertToBool = "";
 		List<Package>collectAllNext = new ArrayList<>();
 		HashMap<String, List<Package>> toReturn = new HashMap<>(); 
 		String thisPack = this.name+this.version;
-
-//		Do this first, because when it gets to the loop, this will never trigger and it will only have conflicts.
-		if(this.dependantSet.size() == 0) {
-			convertToBool += thisPack;		
+//		TODO Need to figure out how to make it not replace something that has been visited.
+		if (this.visited) {
+			convertToBool += " & " +  thisPack + " TEST999*";
+			toReturn.put(convertToBool,  collectAllNext);
+			return toReturn;
 		}
-		
+		this.visited = true;
+	
 		for (int i = 0; i < this.dependantSet.size(); i++) { 
+
 			int size = this.dependantSet.get(i).size();
 			String[] storeAll = new String[size];
 //			Check all deps, if there are OR's to manage them later
@@ -87,34 +93,46 @@ class Package {
 			}
 			
 //			If size is of depencency is just 1, add it ((val & dep)&
-			convertToBool += ("(");
+//			convertToBool += ("(");
 			
 			if(storeAll.length < 2) {	
-				convertToBool += ("(");
-				convertToBool += thisPack;			
-				convertToBool += (" & ");
+				convertToBool += thisPack + " &  ";
 				for (int k = 0; k < storeAll.length; k++) {
 					convertToBool += (dependantSet.get(i).get(k).name+dependantSet.get(i).get(k).version);
 				}
-				convertToBool += (")");
 			} else {
+//				System.out.println("Else");
 				for (int k = 0; k < storeAll.length; k++) {
+					int j = 0;
+					convertToBool += thisPack;
+					int followNot = 0;
+					for (; j < storeAll.length; j++) {
 //						This is the OR's because they are the same dependencies
-					convertToBool += ("(");	
-					convertToBool += thisPack + " & ";
-					convertToBool += (dependantSet.get(i).get(k).name+dependantSet.get(i).get(k).version);
-					convertToBool += (")");	
+						
+						if (followNot != k) {
+							convertToBool += " & ~";
+							convertToBool += (dependantSet.get(i).get(j).name+dependantSet.get(i).get(j).version);
+							followNot ++;
+						} else {
+						
+							System.out.println("What do i get here" + dependantSet.get(i).get(j));
+							convertToBool += " & ";
+							convertToBool += (dependantSet.get(i).get(j).name+dependantSet.get(i).get(j).version);
+							followNot ++;
+						}
+					}
 					if(k<storeAll.length-1)
 						convertToBool += " | ";
-					System.out.println("Multiple dependants " + convertToBool);
+					
+//					
 				}
+//				if(k<storeAll.length-1)
+//					convertToBool += " | ";
+				
+//				=>  implies
+//				<=> exclusive or
 			}
-			
-			convertToBool += (")");
-//			This is an AND because its individual dependecies
-			if(i< this.dependantSet.size()-1) {
-				convertToBool += (" & ");
-			}
+//			convertToBool += (")");
 		}
 		
 //		Conflicts
@@ -125,6 +143,7 @@ class Package {
 			 convertToBool += (nextVal.name+nextVal.version);
 			 
 		}
+		System.out.println(" Converted " + convertToBool);
 		toReturn.put(convertToBool,  collectAllNext);
 		return toReturn;
 	}

@@ -90,6 +90,7 @@ public class Main {
 //		System.out.println("Solver before formula is: " + solver);
 		final FormulaFactory f = new FormulaFactory();
 		final PropositionalParser p = new PropositionalParser(f);
+//		 A & B & D & ~C | A & C &  ~B & ~D
 		final Formula formula = p.parse(solver);
 		System.out.println("Formula is              : " + formula);
 		
@@ -100,10 +101,6 @@ public class Main {
 	    
 	    System.out.println("All results " + allPossibleResults);
 	    
-	    
-//		final Formula formula = p.parse("(B32 | C1) & D1031 & ~B30 & ~B32 & ~B32");
-//		System.out.println("What is+ " + formulaSolver);
-//		System.out.println("What is formula" + formula);
 	}
 	
 	
@@ -288,12 +285,17 @@ public class Main {
 					}
 				}
 //				int getLength = getStrings.length;
-				if(getStrings != "") {
+				
+				System.out.println("string is " + getStrings);
+				if(!getStrings.equals("") && !getStrings.contains("TEST999*")) {
+				
+					System.out.println("String : Pack - " + getStrings + " | " + pack );
 //					System.out.println("Replacing string with:" + pack.name+pack.version);
 //					System.out.println("String replacing with is " + getStrings);
 					solver = solver.replace(pack.name+pack.version, getStrings);
 //					System.out.println("Text is: ");
 //					System.out.println(solver);
+					
 
 				}
 			}
