@@ -477,6 +477,8 @@ public class Main {
 				} else {
 	//				If it has a version, look at the comparator, run the first version which satisfies it
 	//				TODO again, create a list of all the possible values, check which one has more/less dependencies to run that one
+					for (Package p : tempPackage) {
+						System.out.println("Trigger");
 						int result = p.version.compareTo(tempVersion);
 					
 						if(tempSymbol.equals("=")) {
