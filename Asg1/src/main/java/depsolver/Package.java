@@ -44,7 +44,7 @@ class Package {
 		dependantSet = new HashMap<>();
 		conflictsSet = new HashSet<>();
 		
-		if(this.symbol == null) {
+		if(this.symbol == null) { 
 			this.symbol = "=";
 		}
 	}
@@ -66,21 +66,27 @@ class Package {
 		conflictsSet.add(conflict);
 	}
 	
-	public HashMap<String, List<Package>> addToBooleanString() {
+	public HashMap<String, List<Package>> addToBooleanString(String trackString) {
 		
+		boolean addedSingle = false;
 		
 		String convertToBool = "";
 		List<Package>collectAllNext = new ArrayList<>();
 		HashMap<String, List<Package>> toReturn = new HashMap<>(); 
 		String thisPack = this.name+this.version;
-//		TODO Need to figure out how to make it not replace something that has been visited.
+
 		if (this.visited) {
 			convertToBool += " & " +  thisPack + " TEST999*";
 			toReturn.put(convertToBool,  collectAllNext);
 			return toReturn;
 		}
 		this.visited = true;
+		
+		if(this.dependantSet.size() == 0) {
+			convertToBool += this.name+this.version;
+		}
 	
+//		Creating my dependency list
 		for (int i = 0; i < this.dependantSet.size(); i++) { 
 
 			int size = this.dependantSet.get(i).size();
@@ -92,19 +98,26 @@ class Package {
 				storeAll[j] = getPackage.name+getPackage.version;
 			}
 			
-//			If size is of depencency is just 1, add it ((val & dep)&
-//			convertToBool += ("(");
+ 
 			
 			if(storeAll.length < 2) {	
-				convertToBool += thisPack + " &  ";
+				if(!addedSingle) {
+					convertToBool += thisPack + " & ";
+					addedSingle = true;
+				}
+				
 				for (int k = 0; k < storeAll.length; k++) {
 					convertToBool += (dependantSet.get(i).get(k).name+dependantSet.get(i).get(k).version);
+				}
+				
+				if(i+1 < this.dependantSet.size()) {
+					convertToBool += " & ";
 				}
 			} else {
 //				System.out.println("Else");
 				for (int k = 0; k < storeAll.length; k++) {
 					int j = 0;
-					convertToBool += thisPack;
+					convertToBool += trackString;
 					int followNot = 0;
 					for (; j < storeAll.length; j++) {
 //						This is the OR's because they are the same dependencies
@@ -115,7 +128,7 @@ class Package {
 							followNot ++;
 						} else {
 						
-							System.out.println("What do i get here" + dependantSet.get(i).get(j));
+//							System.out.println("What do i get here" + dependantSet.get(i).get(j));
 							convertToBool += " & ";
 							convertToBool += (dependantSet.get(i).get(j).name+dependantSet.get(i).get(j).version);
 							followNot ++;
@@ -126,13 +139,10 @@ class Package {
 					
 //					
 				}
-//				if(k<storeAll.length-1)
-//					convertToBool += " | ";
-				
-//				=>  implies
-//				<=> exclusive or
+				if(i+1 < this.dependantSet.size()) {
+					convertToBool += " & ";
+				}
 			}
-//			convertToBool += (")");
 		}
 		
 //		Conflicts
@@ -140,10 +150,9 @@ class Package {
 		while(itr.hasNext()) {
 			Package nextVal = itr.next();
 			 convertToBool += (" & ~");
-			 convertToBool += (nextVal.name+nextVal.version);
-			 
+			 convertToBool += (nextVal.name+nextVal.version); 
 		}
-		System.out.println(" Converted " + convertToBool);
+		System.out.println("Converted : this " + convertToBool + " : " + this.name); 
 		toReturn.put(convertToBool,  collectAllNext);
 		return toReturn;
 	}

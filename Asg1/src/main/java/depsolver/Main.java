@@ -253,7 +253,7 @@ public class Main {
 	
 	public static void expandString(HashMap<String, List<Package>> getResults) {
 //		System.out.println("Set ");
-//		We did a loop, and now we assign the vars from getResults
+//		We did a loop, and now we assign the vars from getResults	
 		List<Package> toItterate = new ArrayList<>();
 		for (Entry<String, List<Package>> p : getResults.entrySet()) {
 //			Set solver initially to the first set.
@@ -267,16 +267,18 @@ public class Main {
 		String getStrings = "";
 		List<Package> getPackages= new ArrayList<>();
 		
+	
+		
 		if(toItterate.size() == 0) {
 			solver = solver.replaceAll("\\.","");
-			System.out.println("Finished, what is solver: " + solver);
+//			System.out.println("Finished, what is solver: " + solver);
 		} else {
 //			Looping the values
 			for (int i = 0; i < toItterate.size(); i++) {
 				Package pack = toItterate.get(i);
 				HashMap<String, List<Package>> tempStorage = new HashMap<>();
 //				Store results on each itteration
-				tempStorage  = pack.addToBooleanString();
+				tempStorage  = pack.addToBooleanString(solver);
 //				extract results. for loop gets all the packs, 2nd loop gets the string
 				for (Entry<String, List<Package>> tempPack : tempStorage.entrySet()) {
 					getStrings = tempPack.getKey();
@@ -286,25 +288,126 @@ public class Main {
 				}
 //				int getLength = getStrings.length;
 				
-				System.out.println("string is " + getStrings);
-				if(!getStrings.equals("") && !getStrings.contains("TEST999*")) {
+//				System.out.println("string is " + getStrings);
 				
-					System.out.println("String : Pack - " + getStrings + " | " + pack );
-//					System.out.println("Replacing string with:" + pack.name+pack.version);
-//					System.out.println("String replacing with is " + getStrings);
-					solver = solver.replace(pack.name+pack.version, getStrings);
-//					System.out.println("Text is: ");
-//					System.out.println(solver);
-					
 
+			
+				if(!getStrings.equals("") && !getStrings.contains("TEST999*")) {
+//					Setup negative values
+					String checkNeg = "~" + getStrings;
+					String replaceNeg = checkNeg.replace(" & ", " & ~");
+					
+					
+//					Check for circular dependency, what do we do if we find one
+					String[] tempCheck = getStrings.split("&");
+					
+					String s = "";
+					String s2 = "";
+					for (int j = 1; j < tempCheck.length; j++) {
+						s = tempCheck[j];			
+						if(solver.contains(s)) {
+							s2 = "~" + s;
+							s2 = s2.replace(" ", "");
+						} else {
+							s="";
+						}
+					}
+					
+//					Replace with String	 
+					
+					int orCountSolver = solver.length() - solver.replace("|", "").length();
+					int orCountString = getStrings.length() - getStrings.replace("|", "").length();
+					if(orCountSolver < orCountString) {
+						solver = getStrings;
+					} else {
+						solver = solver.replace(pack.name+pack.version, getStrings); 
+					}
+					
+					
+					
+//					System.out.println("At start end is : " + solver);
+//					Check to replace for negatives
+					if(solver.contains(checkNeg)) {
+						solver = solver.replace(checkNeg, replaceNeg);
+//						Remove double negatives
+						solver = solver.replace("~~", "~");
+					}
+					
+					System.out.println("At start " + solver);
+
+//					TODO Possible issue if there is no " | " I don't know how it will react
+					String[] check = solver.split("\\|");
+//					System.out.println("Check is " + Arrays.toString(check));
+					String ss = s.replace(" ", "");
+					
+						for (int j = 0; j < check.length; j++) {
+							if(!(s.trim().equals(""))) {
+//								Get Opposite
+//								String getOpposite = ("~"+ss);
+								String getNegative = "";
+								String getPositive = "";
+								if(s.contains("~")) {
+									getPositive = s.replace("~", "");
+									getNegative = s;
+								} else {
+									getPositive = s;
+									getNegative = "~"+s.trim();
+								}
+//								System.out.println("Negaitve : Positive " + getNegative + " " + getPositive );
+//							If there are 2 positives, then it needs to install the same thing to get it which is circular dependency
+							
+							
+							if(check[j].contains(getPositive) && !check[j].contains(getNegative)) {
+//								System.out.println("Check is " + check[j]);
+//								String tempSolver = check[j].replace(getNegative, "");
+//								System.out.println("TempSolver " + tempSolver);
+//								int dupes = tempSolver.length() - tempSolver.replace(getPositive, "").length();
+//								System.out.println("Duplicates " + dupes);
+//							
+								String replace = check[j] + "| ";
+//								System.out.println("Size " + j + " " + (check.length-1));
+								if(j >= check.length-1) {
+//									System.out.println("Trigger");
+									replace = "|" + check[j];
+								}
+//								System.out.println("Check " + check[j]);
+								
+//								System.out.println("Replacing with " + replace);
+								solver = solver.replace(replace, "");
+								
+							}
+						}
+
+					}
+						if(!(s.trim().equals(""))) {
+//						Replacing dependencies
+							solver = solver.replace(s2, s);
+						}
+				
 				}
 			}
+//			Simplify
+			FormulaFactory f = new FormulaFactory();
+			PropositionalParser p = new PropositionalParser(f);
+			Formula temp = null;
+			solver = solver.replace(".", "");
+			try { 
+				temp = p.parse(solver);
+//				System.out.println(temp);
+			} catch (ParserException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			if(temp == null) {
+				System.out.println("Error");
+			} else {
+				solver = temp.toString();
+			}
 			
-		
-		
-		HashMap<String, List<Package>> getNewResults = new HashMap<>();
-		getNewResults.put(solver, getPackages);
-		expandString(getNewResults);
+			System.out.println("Solver at end is: " + solver);
+			HashMap<String, List<Package>> getNewResults = new HashMap<>();
+			getNewResults.put(solver, getPackages);
+			expandString(getNewResults);
 		}
 //		for (int l = 0; l < 2; l++) {
 			
@@ -342,9 +445,9 @@ public class Main {
 	
 //	Checks which packages to run and starts running them
 	public static void startRun(Map<String, SortedSet<Package>> tasksMap, String[] toInstallArr) {
-		StringBuilder strBuilder = new StringBuilder();
+//		StringBuilder strBuilder = new StringBuilder();
 		List<Package> toInstallList = new ArrayList<>();
-		List<Package> toRemoveList = new ArrayList<>();
+//		List<Package> toRemoveList = new ArrayList<>();
 		for (int i = 0; i < toInstallArr.length; i++) {
 			Matcher m = toInstallPattern.matcher(toInstallArr[i]);
 			
@@ -357,35 +460,34 @@ public class Main {
 				
 				SortedSet<Package> tempPackage = tasksMap.get(tempPackageName);
 				
+				
 	//			We check if a version exists, if not, then just run the value with highest version
 	//			TODO I need to somehow check for all these available versions it might have, which ones to run
 				if(tempVersion == null) {
 					if(tempInstall.equals("+")) {
 						toInstallList.add(tempPackage.first());
 //						String getStr = tempPackage.first().name+tempPackage.first().version;
-						getResults = tempPackage.first().addToBooleanString();
+//						getResults = tempPackage.first().addToBooleanString();
 						
 						expandString(getResults);
 					} else {
-						toRemoveList.add(tempPackage.first());
+//						toRemoveList.add(tempPackage.first());
 //						tempPackage.first().uninstall(strBuilder);
 					}
 				} else {
 	//				If it has a version, look at the comparator, run the first version which satisfies it
 	//				TODO again, create a list of all the possible values, check which one has more/less dependencies to run that one
-					for (Package p : tempPackage) {
-						
 						int result = p.version.compareTo(tempVersion);
 					
 						if(tempSymbol.equals("=")) {
-						
+							
 							if(result == 0) {
 								if(tempInstall.equals("+")) {
-//									toInstallList.add(p);
+									toInstallList.add(p);
 //									p.run(strBuilder);
 //									System.out.println("What will it run" + p);
 //									String getStr = (p.name+p.version);
-									getResults = p.addToBooleanString();
+//									getResults = p.addToBooleanString();
 									expandString(getResults);
 								} else {
 //									toRemoveList.add(p);
@@ -399,9 +501,9 @@ public class Main {
 							
 							if(result == -1) {
 								if(tempInstall.equals("+")) {
-//									toInstallList.add(p);
+									toInstallList.add(p);
 //									String getStr = (p.name+p.version);
-									getResults = p.addToBooleanString();
+//									getResults = p.addToBooleanString();
 									expandString(getResults);
 //									System.out.println("What will it run" + p);
 //									p.run(strBuilder);
@@ -416,9 +518,9 @@ public class Main {
 						} else if(tempSymbol.equals("<=")) {
 							if(result == -1 || result == 0) {
 								if(tempInstall.equals("+")) {
-//									toInstallList.add(p);
+									toInstallList.add(p);
 //									String getStr = (p.name+p.version);
-									getResults = p.addToBooleanString();
+//									getResults = p.addToBooleanString();
 									expandString(getResults);
 //									System.out.println("What will it run" + p);
 //									p.run(strBuilder);
@@ -433,9 +535,9 @@ public class Main {
 							
 							if(result == 1) {
 								if(tempInstall.equals("+")) {
-//									toInstallList.add(p);
+									toInstallList.add(p);
 //									String getStr = (p.name+p.version);
-									getResults = p.addToBooleanString();
+//									getResults = p.addToBooleanString();
 									expandString(getResults);
 //									System.out.println("What will it run" + p);
 //									p.run(strBuilder);
@@ -450,10 +552,9 @@ public class Main {
 						} else if(tempSymbol.equals(">=")) {
 							if(result == 1 || result == 0) {
 								if(tempInstall.equals("+")) {
-//									toInstallList.add(p);
+									toInstallList.add(p);
 //									String getStr = (p.name+p.version);
-									getResults = p.addToBooleanString();
-									expandString(getResults);
+									
 //									System.out.println("What will it run" + p);
 //									p.run(strBuilder);
 								} else {
@@ -472,6 +573,14 @@ public class Main {
 			
 			};
 		}
+		
+		for (Package toInstall : toInstallList) {
+			String startString = toInstall.name+toInstall.version;
+			getResults = toInstall.addToBooleanString(startString);
+			expandString(getResults);
+		}
+		
+		
 //		checkIfInstalled(toInstallList, toRemoveList);
 //		System.out.println("Installed Packages:\n" + strBuilder);	
 //		Prints out my sets
