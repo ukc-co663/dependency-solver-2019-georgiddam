@@ -1,5 +1,6 @@
 package depsolver;
 import java.io.*;
+
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
@@ -27,7 +28,6 @@ public class Main {
 		
 		@Override
 		public int compare(Package arg0, Package arg1) {
-			
 			return arg1.version.compareTo(arg0.version);
 		}
 	};
@@ -40,6 +40,14 @@ public class Main {
 	private static String solver = "";
 	
 	private static HashMap<String, List<Package>> getResults = new HashMap<>();
+	
+	private static Map<String, SortedSet<Package>> tasksMap = new HashMap<>();
+	
+	private static int lowestSize;
+	
+	private static String finalResult;
+	
+	
 	
 	public static void main(String[] args) throws IOException, ParserException {
 		String repo = readFile(args[0]);
@@ -67,7 +75,7 @@ public class Main {
 		JsonElement jsonParsed = parseJson(repo);
 		allTasks = createPackages(jsonParsed, initialArr);
 		
-		Map<String, SortedSet<Package>> tasksMap = new HashMap<>();
+		
 	
 		for (Package p: allTasks) {
 			String pName = p.name;
@@ -80,8 +88,10 @@ public class Main {
 			temp.add(p);							
 		}
 		startRun(tasksMap, toInstallArr);
+		
+		System.out.println(finalResult);
+		
 	}
-	
 	
 	  static String readFile(String filename) throws IOException {
 		    BufferedReader br = new BufferedReader(new FileReader(filename));
@@ -93,7 +103,6 @@ public class Main {
 	private static JsonElement parseJson(String text) throws FileNotFoundException {
 		JsonParser parser = new JsonParser();
 		JsonElement rootElement = parser.parse(text);
-		
 		return rootElement;
 	}
 	
@@ -235,7 +244,6 @@ public class Main {
 //			Set solver initially to the first set.
 			if(solver.equals("")) {
 				solver = p.getKey();
-//				System.out.println("Solver is: " + solver);
 			}
 			toItterate = p.getValue();
 		}
@@ -244,8 +252,7 @@ public class Main {
 		List<Package> getPackages= new ArrayList<>();
 //		This should happen if there are no packageNames left.
 		if(toItterate.size() == 0) {
-			solver = solver.replaceAll("\\.","");
-//			System.out.println("Finished, what is solver: " + solver);
+//			solver = solver.replaceAll("\\.","");
 			getResults(solver);
 		} else {
 //			Looping the values
@@ -290,7 +297,7 @@ public class Main {
 					if(orCountSolver < orCountString) {
 						solver = getPackageName;
 					} else {
-						solver = solver.replace(pack.name+pack.version, getPackageName); 
+						solver = solver.replace(pack.name+pack.dotlessVersion, getPackageName); 
 					}
 					
 //					Check to replace for negatives
@@ -336,7 +343,7 @@ public class Main {
 			FormulaFactory f = new FormulaFactory();
 			PropositionalParser p = new PropositionalParser(f);
 			Formula temp = null;
-			solver = solver.replace(".", "");
+//			solver = solver.replace(".", "");
 			try { 
 				temp = p.parse(solver);
 			} catch (ParserException e) {
@@ -349,7 +356,6 @@ public class Main {
 				solver = temp.toString();
 			}
 			
-//			System.out.println("Solver at end is: " + solver);
 			HashMap<String, List<Package>> getNewResults = new HashMap<>();
 			getNewResults.put(solver, getPackages);
 			expandString(getNewResults);
@@ -357,6 +363,7 @@ public class Main {
 	}
 	
 	public static void getResults(String finalAnswer) {
+		
 		final FormulaFactory f = new FormulaFactory();
 		final PropositionalParser p = new PropositionalParser(f);
 		Formula formula;
@@ -367,18 +374,108 @@ public class Main {
 		    miniSat.add(formula);
 //		    final Tristate result = miniSat.sat();
 		    List<Assignment> allPossibleResults = miniSat.enumerateAllModels();
-
+		   
 		    for (Assignment assignment : allPossibleResults) {
 		    	if(assignment.size() > 0) {
-		    		System.out.println("Positive " + assignment.positiveLiterals());
-		    		System.out.println("Negative " + assignment.negativeLiterals());
+			    	List<Package> packagesToInstall = new ArrayList<>();
+			    	List<Package> packagesToUninstall = new ArrayList<>();
+		    		Package getPackage = null;
+		    		String[] posLit = assignment.positiveLiterals().toString().replace("[", "").replace("]", "").split(",");
+		    		
+		    		String[] negLit = new String[assignment.negativeLiterals().size() ];
+		    		if(assignment.negativeLiterals().size() > 0) {
+		    			negLit = assignment.negativeLiterals().toString().replace("[", "").replace("]", "").split(",");
+		    		}
+		    		
+//		    		Adding packages to install
+		    		for (int i = 0; i < posLit.length; i++) {
+
+//		    			This is below is not a bug, its a feature!!
+		    			String[] temp = posLit[i].split("version999");
+		    			String key = temp[0].trim();
+		    			String value = temp[1].trim();
+//		    			System.out.println(key + " " + value);
+		    			SortedSet<Package> temp2 = tasksMap.get(key);
+		    			for (Package pack : temp2) {
+		    				String packVersion = pack.dotlessVersion.replace("version999", "");
+		    				if(packVersion.equals(value)){
+		    					getPackage = pack;
+		    					break;
+		    				}		
+						}
+		    			packagesToInstall.add(getPackage);
+					}
+		    		
+//		    		Adding packages to uninstall
+
+		    		for (int i = 0; i < negLit.length; i++) {
+		    			String[] temp = negLit[i].split("version999");
+		    			String key = temp[0].replace("~", "").trim();
+//		    			System.out.println(key);
+		    			String value = temp[1].trim();
+		    			SortedSet<Package> temp2 = tasksMap.get(key);
+//		    			Checking for which conflicts exist
+		    			for (Package pack : temp2) {
+		    				String packVersion = pack.dotlessVersion.replace("version999", "");
+		    				if(packVersion.equals(value)){
+//		    					System.out.println(getPackage);
+		    					getPackage = pack;
+		    					break;
+		    				}
+		    			}
+	    				for (Package asg : packagesToInstall) {
+	    					if(asg.conflictsSet.size() > 0) {
+	    						for (Package checkConflict : asg.conflictsSet) {
+	    							String checkC = checkConflict.name+checkConflict.dotlessVersion;
+	    							String compareC = getPackage.name+getPackage.dotlessVersion;
+									if(checkC.equals(compareC)) {
+										packagesToUninstall.add(getPackage);
+									}
+								}
+	    					}
+	    				}		
+					}
+
+		    		int getSize = 0;
+		    		StringBuilder result = new StringBuilder();
+		    		result.append("[");
+		    		
+		    		
+		            int size = packagesToInstall.size();
+		            for (int i = 0; i < size / 2; i++) {
+		                final Package pack = packagesToInstall.get(i);
+		                packagesToInstall.set(i, packagesToInstall.get(size - i - 1)); // swap
+		                packagesToInstall.set(size - i - 1, pack); // swap
+		            }
+		            
+		    		
+//		    		packagesToInstall.reverse();
+		    		for (Package toUninstall : packagesToUninstall) {
+						getSize += toUninstall.checkUninstall(result, getSize);
+					}
+		    		for (Package toInstall : packagesToInstall) {
+						getSize += toInstall.checkInstall(result, getSize);
+					}
+		    		result = result.deleteCharAt(result.length()-2);
+		    		result.append("]");
+
+//		    		Get best name
+		    		if(lowestSize == 0) {
+		    			lowestSize = getSize;
+		    			finalResult = result.toString();
+		    		} else {
+		    			if (lowestSize > getSize) {
+		    				lowestSize = getSize;
+		    				finalResult = result.toString();
+		    			}
+		    		}
+		    		
 		    	}
 			}
 		} catch (ParserException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	
 	}
 	
 	
@@ -405,7 +502,6 @@ public class Main {
 						tempSymbol = "="; 
 					} else {
 						result = p.version.compareTo(tempVersion);
-					
 					}
 				
 					if(tempSymbol.equals("=")) {
@@ -449,7 +545,6 @@ public class Main {
 								toInstallList.add(p);
 							}
 						}
-						
 					} else {
 						System.out.println("Should never reach here: \"" + tempSymbol + "\"");
 						break;
@@ -461,7 +556,7 @@ public class Main {
 		for (Package toInstall : toInstallList) {
 //			Reset solver for each itteration
 			solver = "";
-			String startString = toInstall.name+toInstall.version;
+			String startString = toInstall.name+toInstall.dotlessVersion;
 			getResults = toInstall.addToBooleanString(startString);
 			expandString(getResults);
 		}	

@@ -14,6 +14,7 @@ class Package {
 	String version;
 	String size;
 	
+	String dotlessVersion;
 //	boolean visited = false;
 	
 //	StringBuilder solver = new StringBuilder();
@@ -41,6 +42,7 @@ class Package {
 	} 
 	
 	public void init() {
+		dotlessVersion = "version999"+version.replaceAll("\\.","");
 		dependantSet = new HashMap<>();
 		conflictsSet = new HashSet<>();
 		
@@ -56,7 +58,6 @@ class Package {
 	public String getVersion() {
 		return this.version;
 	}
-
 	
 	public void addDependants(Integer i, List<Package> dependant) {
 		dependantSet.put(i, dependant);
@@ -73,7 +74,7 @@ class Package {
 		String convertToBool = "";
 		List<Package>collectAllNext = new ArrayList<>();
 		HashMap<String, List<Package>> toReturn = new HashMap<>(); 
-		String thisPack = this.name+this.version;
+		String thisPack = this.name+this.dotlessVersion;
 		if (this.visited) {
 			convertToBool += " & " +  thisPack + " TEST999*";
 			toReturn.put(convertToBool,  collectAllNext);
@@ -82,7 +83,7 @@ class Package {
 		this.visited = true;
 		
 		if(this.dependantSet.size() == 0) {
-			convertToBool += this.name+this.version;
+			convertToBool += this.name+this.dotlessVersion;
 		}
 	
 //		Creating my dependency list
@@ -94,7 +95,7 @@ class Package {
 			for (int j = 0; j < this.dependantSet.get(i).size(); j++) {
 				Package getPackage = dependantSet.get(i).get(j);
 				collectAllNext.add(getPackage);
-				storeAll[j] = getPackage.name+getPackage.version;
+				storeAll[j] = getPackage.name+getPackage.dotlessVersion;
 			}
 			
  
@@ -106,7 +107,7 @@ class Package {
 				}
 				
 				for (int k = 0; k < storeAll.length; k++) {
-					convertToBool += (dependantSet.get(i).get(k).name+dependantSet.get(i).get(k).version);
+					convertToBool += (dependantSet.get(i).get(k).name+dependantSet.get(i).get(k).dotlessVersion);
 				}
 				
 				if(i+1 < this.dependantSet.size()) {
@@ -123,13 +124,13 @@ class Package {
 						
 						if (followNot != k) {
 							convertToBool += " & ~";
-							convertToBool += (dependantSet.get(i).get(j).name+dependantSet.get(i).get(j).version);
+							convertToBool += (dependantSet.get(i).get(j).name+dependantSet.get(i).get(j).dotlessVersion);
 							followNot ++;
 						} else {
 						
 //							System.out.println("What do i get here" + dependantSet.get(i).get(j));
 							convertToBool += " & ";
-							convertToBool += (dependantSet.get(i).get(j).name+dependantSet.get(i).get(j).version);
+							convertToBool += (dependantSet.get(i).get(j).name+dependantSet.get(i).get(j).dotlessVersion);
 							followNot ++;
 						}
 					}
@@ -149,7 +150,7 @@ class Package {
 		while(itr.hasNext()) {
 			Package nextVal = itr.next();
 			 convertToBool += (" & ~");
-			 convertToBool += (nextVal.name+nextVal.version); 
+			 convertToBool += (nextVal.name+nextVal.dotlessVersion); 
 		}
 //		System.out.println("Converted : this " + convertToBool + " : " + this.name); 
 		toReturn.put(convertToBool,  collectAllNext);
@@ -258,16 +259,20 @@ class Package {
 //		}
 //	}
 	
+	public int checkInstall(StringBuilder result, int addSize) {
+		if(this.done == true) return addSize;
+//		this.done = true;
+		result.append('"').append("+").append(this.name).append(this.symbol).append(this.version).append('"').append(",").append("\n");;
+		return addSize += this.getSize();
+	}
 	
-//	public boolean uninstall(StringBuilder result) {
-//		if(isRequired) {
-//			System.out.println(this.name + " Is Required somewhere else");
-//			return false;
-//		}
+	public int checkUninstall(StringBuilder result, int addSize) {
+//		System.out.println(this.name+this.dotlessVersion);
+		if(this.done == false) return addSize;
 //		this.done = false;
-//		result.append("-").append(this.name).append(this.symbol).append(this.version).append("\n");
-//		return true;
-//	}
+		result.append('"').append("-").append(this.name).append(this.symbol).append(this.version).append('"').append(",").append("\n");
+		return addSize += 1000000;
+	}
 	
 	@Override
 	public String toString() {
