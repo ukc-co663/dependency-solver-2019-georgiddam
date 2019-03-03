@@ -74,7 +74,6 @@ class Package {
 		List<Package>collectAllNext = new ArrayList<>();
 		HashMap<String, List<Package>> toReturn = new HashMap<>(); 
 		String thisPack = this.name+this.version;
-
 		if (this.visited) {
 			convertToBool += " & " +  thisPack + " TEST999*";
 			toReturn.put(convertToBool,  collectAllNext);
@@ -152,7 +151,7 @@ class Package {
 			 convertToBool += (" & ~");
 			 convertToBool += (nextVal.name+nextVal.version); 
 		}
-		System.out.println("Converted : this " + convertToBool + " : " + this.name); 
+//		System.out.println("Converted : this " + convertToBool + " : " + this.name); 
 		toReturn.put(convertToBool,  collectAllNext);
 		return toReturn;
 	}
