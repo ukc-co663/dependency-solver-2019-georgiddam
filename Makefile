@@ -4,7 +4,7 @@ compile: deps
 	./compile.sh
 
 deps:
-	./install_deps.sh
+	./install.sh
 	touch deps
 
 test: compile
