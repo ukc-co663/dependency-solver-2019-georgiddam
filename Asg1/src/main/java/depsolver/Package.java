@@ -268,6 +268,7 @@ class Package {
 	
 	public int checkUninstall(StringBuilder result, int addSize) {
 //		System.out.println(this.name+this.dotlessVersion);
+//		System.out.println(addSize);
 		if(this.done == false) return addSize;
 //		this.done = false;
 		result.append('"').append("-").append(this.name).append(this.symbol).append(this.version).append('"').append(",").append("\n");

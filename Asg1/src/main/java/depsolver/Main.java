@@ -90,6 +90,7 @@ public class Main {
 		startRun(tasksMap, toInstallArr);
 		
 		System.out.println(finalResult);
+		System.out.println(lowestSize);
 		
 	}
 	
@@ -436,7 +437,7 @@ public class Main {
 	    				}		
 					}
 
-		    		int getSize = 0;
+		    		
 		    		StringBuilder result = new StringBuilder();
 		    		result.append("[");
 		    		
@@ -448,10 +449,12 @@ public class Main {
 		                packagesToInstall.set(size - i - 1, pack); // swap
 		            }
 		            
-		    		
+		            int getSize = 0;
 //		    		packagesToInstall.reverse();
 		    		for (Package toUninstall : packagesToUninstall) {
+		    			System.out.println(getSize);
 						getSize += toUninstall.checkUninstall(result, getSize);
+						
 					}
 		    		for (Package toInstall : packagesToInstall) {
 						getSize += toInstall.checkInstall(result, getSize);
