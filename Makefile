@@ -1,6 +1,6 @@
 all: compile
 
-compile: 
+compile: deps
 	./compile.sh
 
 deps:
