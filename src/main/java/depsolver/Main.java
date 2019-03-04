@@ -352,6 +352,7 @@ public class Main {
 			FormulaFactory f = new FormulaFactory();
 			PropositionalParser p = new PropositionalParser(f);
 			Formula temp = null;
+//			System.out.println("What booleans do I get " + solver);
 //			solver = solver.replace(".", "");
 			try { 
 				temp = p.parse(solver);
@@ -367,6 +368,7 @@ public class Main {
 			
 			HashMap<String, List<Package>> getNewResults = new HashMap<>();
 			getNewResults.put(solver, getPackages);
+			
 			expandString(getNewResults);
 		}
 	}
@@ -481,6 +483,7 @@ public class Main {
 //		    		System.out.println(result);
 
 //		    		Get best name
+//		    		System.out.println("To Install" + packagesToInstall);
 		    		if(lowestSize == 0) {
 		    			lowestSize = getSize;
 		    			finalPackages = packagesToInstall;
@@ -547,7 +550,9 @@ public class Main {
 			
 			StringBuilder finalResult = new StringBuilder();
 			finalResult.append("[");
-			if(packagesToUninstall.size() > 0) {
+
+			if(packagesToUninstall!=null) {
+				
 				for(Package p : packagesToUninstall) {
 					finalResult = finalResult.append('"').append("-").append(p.name).append("=").append(p.version).append('"').append(",\n");
 				}
@@ -557,8 +562,9 @@ public class Main {
 				finalResult = finalResult.append('"').append("+").append(topoOrder.get(i)).append('"').append(",");
 				
 			}
-			
-			finalResult = finalResult.deleteCharAt(finalResult.length()-1);
+//			If its empty brackets, just let them be
+			if(finalResult.length() > 1)
+				finalResult = finalResult.deleteCharAt(finalResult.length()-1);
 			finalResult.append("]");
 			System.out.println(finalResult);
 		}
