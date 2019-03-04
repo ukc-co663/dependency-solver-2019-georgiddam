@@ -12,11 +12,10 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.buildship.core.gradleclasspathcontainer"/>
-	<classpathentry kind="lib" path="/home/georgiddam/Documents/Year3 Projects/dependency-solver-2019-georgiddam/Asg1/lib/gson-2.8.5.jar"/>
-	<classpathentry kind="lib" path="/home/georgiddam/Documents/Year3 Projects/dependency-solver-2019-georgiddam/Asg1/lib/logicng-1.4.1.jar"/>
-	<classpathentry kind="lib" path="/home/georgiddam/Documents/Year3 Projects/dependency-solver-2019-georgiddam/Asg1/lib/antlr4-runtime-4.7.1.jar"/>
 	<classpathentry kind="lib" path="/home/georgiddam/Documents/Year3Projects/dependency-solver-2019-georgiddam/lib/antlr4-runtime-4.7.1.jar"/>
 	<classpathentry kind="lib" path="/home/georgiddam/Documents/Year3Projects/dependency-solver-2019-georgiddam/lib/gson-2.8.5.jar"/>
 	<classpathentry kind="lib" path="/home/georgiddam/Documents/Year3Projects/dependency-solver-2019-georgiddam/lib/logicng-1.4.1.jar"/>
+	<classpathentry kind="lib" path="/home/georgiddam/Documents/Year3Projects/dependency-solver-2019-georgiddam/lib/jgrapht-core-1.3.0.jar"/>
+	<classpathentry kind="lib" path="/home/georgiddam/Documents/Year3Projects/dependency-solver-2019-georgiddam/lib/jheaps-0.9.jar"/>
 	<classpathentry kind="output" path="bin/default"/>
 </classpath>

@@ -7,6 +7,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.jgrapht.alg.cycle.CycleDetector;
+import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.traverse.TopologicalOrderIterator;
+
 import org.logicng.datastructures.Assignment;
 import org.logicng.datastructures.Tristate;
 import org.logicng.formulas.Formula;
@@ -47,7 +52,7 @@ public class Main {
 	
 	private static String finalResult;
 	
-	
+	private static List<Package> finalPackages = new ArrayList<>();
 	
 	public static void main(String[] args) throws IOException, ParserException {
 		String repo = readFile(args[0]);
@@ -88,8 +93,8 @@ public class Main {
 			temp.add(p);							
 		}
 		startRun(tasksMap, toInstallArr);
-		
-		System.out.println(finalResult);
+		createGraph();
+//		System.out.println(finalResult);
 //		System.out.println(lowestSize);
 		
 	}
@@ -228,9 +233,9 @@ public class Main {
         }   
 				
 //		for (int i = 0; i < allTasks.size(); i++) {
-//			Shows me the Linked Dependencies in the end
+////			Shows me the Linked Dependencies in the end
 //			System.out.println(allTasks.get(i));
-			
+//			
 //		}
 //		
 		return allTasks;
@@ -371,6 +376,8 @@ public class Main {
 		try {
 			formula = p.parse(finalAnswer);
 			
+//			System.out.println();
+			
 		    final SATSolver miniSat = MiniSat.miniSat(f);
 		    miniSat.add(formula);
 //		    final Tristate result = miniSat.sat();
@@ -378,6 +385,7 @@ public class Main {
 		   
 		    for (Assignment assignment : allPossibleResults) {
 		    	if(assignment.size() > 0) {
+//		    		System.out.println(assignment.literals());
 			    	List<Package> packagesToInstall = new ArrayList<>();
 			    	List<Package> packagesToUninstall = new ArrayList<>();
 		    		Package getPackage = null;
@@ -442,6 +450,8 @@ public class Main {
 		    		result.append("[");
 		    		
 		    		
+		    		
+//		    		Swapping the arraylist
 		            int size = packagesToInstall.size();
 		            for (int i = 0; i < size / 2; i++) {
 		                final Package pack = packagesToInstall.get(i);
@@ -461,15 +471,17 @@ public class Main {
 					}
 		    		result = result.deleteCharAt(result.length()-2);
 		    		result.append("]");
-
+//		    		System.out.println(result);
 //		    		Get best name
 		    		if(lowestSize == 0) {
 		    			lowestSize = getSize;
 		    			finalResult = result.toString();
+		    			finalPackages = packagesToInstall;
 		    		} else {
 		    			if (lowestSize > getSize) {
 		    				lowestSize = getSize;
 		    				finalResult = result.toString();
+		    				finalPackages = packagesToInstall;
 		    			}
 		    		}
 		    		
@@ -479,6 +491,27 @@ public class Main {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	private static DefaultDirectedGraph<String, DefaultEdge> createGraph() {
+		DefaultDirectedGraph<String, DefaultEdge> finalGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
+		
+		for (Package pack : finalPackages) {
+			finalGraph.addVertex(pack.name + "=" + pack.version);
+		}
+		
+		for (Package pack : finalPackages) {
+			for (int i = 0; i < pack.dependantSet.size(); i++) {
+				for (int j = 0; j < pack.dependantSet.get(i).size(); j++) {
+					Package depPack = pack.dependantSet.get(i).get(j);
+					if(finalGraph.containsVertex(depPack.name+"="+depPack.version)) {
+						finalGraph.addEdge(pack.name + "=" + pack.version, depPack.name + "=" + depPack.version);
+					}
+				}
+			}
+		}
+		System.out.println(finalGraph);
+		return finalGraph;
 	}
 	
 	
