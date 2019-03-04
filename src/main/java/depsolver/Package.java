@@ -87,19 +87,22 @@ class Package {
 		}
 	
 //		Creating my dependency list
+//		System.out.println("Check");
 		for (int i = 0; i < this.dependantSet.size(); i++) { 
 
 			int size = this.dependantSet.get(i).size();
 			String[] storeAll = new String[size];
 //			Check all deps, if there are OR's to manage them later
+			
 			for (int j = 0; j < this.dependantSet.get(i).size(); j++) {
 				Package getPackage = dependantSet.get(i).get(j);
+//				System.out.println("Check Pack" + getPackage);
 				collectAllNext.add(getPackage);
-				storeAll[j] = getPackage.name+getPackage.dotlessVersion;
+				storeAll[j] = getPackage.name+getPackage.dotlessVersion; 
 			}
 			
  
-			
+//			Single dep
 			if(storeAll.length < 2) {	
 				if(!addedSingle) {
 					convertToBool += thisPack + " & ";
@@ -113,8 +116,8 @@ class Package {
 				if(i+1 < this.dependantSet.size()) {
 					convertToBool += " & ";
 				}
+//			Multiple Deps
 			} else {
-//				System.out.println("Else");
 				for (int k = 0; k < storeAll.length; k++) {
 					int j = 0;
 					convertToBool += trackString;
@@ -129,6 +132,7 @@ class Package {
 						} else {
 						
 //							System.out.println("What do i get here" + dependantSet.get(i).get(j));
+							
 							convertToBool += " & ";
 							convertToBool += (dependantSet.get(i).get(j).name+dependantSet.get(i).get(j).dotlessVersion);
 							followNot ++;
@@ -144,7 +148,8 @@ class Package {
 				}
 			}
 		}
-		
+//		System.out.println("Name: " + this);
+//		System.out.println(convertToBool.replace("version999", "="));
 //		Conflicts
 		Iterator<Package> itr = conflictsSet.iterator();
 		while(itr.hasNext()) {

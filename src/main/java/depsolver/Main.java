@@ -52,7 +52,11 @@ public class Main {
 	
 //	private static String finalResult;
 	
+//	private static int badLifeDecisions = 0;
+	
 	private static List<Package> finalPackages = new ArrayList<>();
+	
+	private static StringBuilder finalResult = new StringBuilder();
 	
 	private static List<Package> packagesToInstall;
 	private static List<Package> packagesToUninstall;
@@ -97,8 +101,8 @@ public class Main {
 		}
 		startRun(tasksMap, toInstallArr);
 //		System.out.println(packagesToUninstall);
-		topoSort();
-//		System.out.println(finalResult);
+		
+		System.out.println(finalResult);
 		
 	}
 	
@@ -117,12 +121,16 @@ public class Main {
 	
 //	Add dependencies and constraints
 	private static void addDependAndConflict(String[] dependants, Package currentJson, List<Package> allTasks, boolean isDep, int pos) { 
-        List<Package> combinedDependants = new ArrayList<>();
+//		System.out.println("Curr" + (currentJson));
+
+//		System.out.println("curr " + currentJson);
+//		System.out.println("deps " + Arrays.toString(dependants));
+		List<Package> combinedDependants = new ArrayList<>();
         String name;
-        String version = "0.0";
+        String version = "1";
         String symbol = "=";
         for (int i = 0; i < dependants.length; i++) {
-            String depends = dependants[i];;
+            String depends = dependants[i];
             Matcher m = dependancyConflictPattern.matcher(depends);
             if(m.matches()) {
 //                System.out.println("Matching: " +  m.group(0) + " | " + m.group(1) + " | " + m.group(2) + " | " + m.group(3) + "");
@@ -132,11 +140,12 @@ public class Main {
                 }
                 if (!(m.group(3) == null)) {
                     version = (m.group(3));
-                }
-                
+                } 
                 for (int j = 0; j < allTasks.size(); j++) {
                     Package tempTask = allTasks.get(j);
+//                    System.out.println("Temp Task " + tempTask);
                     if(tempTask.name.equals(name)) {
+//                    	System.out.println("Task to add " + tempTask);
                         int result = tempTask.version.compareTo(version);
                         if(symbol.equals("=")) {
                             combinedDependants.add(tempTask);
@@ -165,7 +174,10 @@ public class Main {
                 }
             }
 //            If its a dependency
-            if(isDep) {
+            if(isDep) { 
+//            	System.out.println("pos first "+ pos);
+//            	pos = pos - badLifeDecisions;
+//            	System.out.println("Pos next  " + pos);
                 currentJson.addDependants(pos, combinedDependants);
 //            Else add as a conflict
             } else {
@@ -177,6 +189,7 @@ public class Main {
     }
 	
 	private static List<Package> createPackages(JsonElement json, String[] initialArr) {
+		
 		List<Package> allTasks = new ArrayList<>();
 		Gson gson = new Gson();
 		Package[] finalPackage = gson.fromJson(json, Package[].class);
@@ -233,30 +246,34 @@ public class Main {
 				}
 			}
 			
-        }   
+        }
+		
+//		Print everything
 				
 //		for (int i = 0; i < allTasks.size(); i++) {
 ////			Shows me the Linked Dependencies in the end
 //			System.out.println(allTasks.get(i));
 //			
 //		}
-//		
+		
 		return allTasks;
 		
 	}
 	
 	
 	public static void expandString(HashMap<String, List<Package>> getResults) {
+		
 //		We did a loop, and now we assign the vars from getResults	
 		List<Package> toItterate = new ArrayList<>();
 		for (Entry<String, List<Package>> p : getResults.entrySet()) {
 //			Set solver initially to the first set.
 			if(solver.equals("")) {
+//				System.out.println("First solver " + p.getKey().replace("version999", "="));
 				solver = p.getKey();
 			}
 			toItterate = p.getValue();
 		}
-		
+//		System.out.println("Solver "  + solver.replace("version999", "=") );
 		String getPackageName = "";
 		List<Package> getPackages= new ArrayList<>();
 //		This should happen if there are no packageNames left.
@@ -279,26 +296,23 @@ public class Main {
 				}
 				
 				if(!getPackageName.equals("") && !getPackageName.contains("TEST999*")) {
-//					Setup negative values
 					String checkNeg = "~" + getPackageName;
 					String replaceNeg = checkNeg.replace(" & ", " & ~");
 					
-					
 //					Look at what we just got back and check each value for possible circular dependency
-					String[] tempCheck = getPackageName.split("&");
-					
-					String s = "";
-					String s2 = "";
-					for (int j = 1; j < tempCheck.length; j++) {
-						s = tempCheck[j];			
-						if(solver.contains(s)) {
-							s2 = "~" + s;
-							s2 = s2.replace(" ", "");
-						} else {
-							s="";
-						}
-					}
-					
+//					String[] tempCheck = getPackageName.split("&");
+//					
+//					String s = "";
+//					String s2 = "";
+//					for (int j = 1; j < tempCheck.length; j++) {
+//						s = tempCheck[j];			
+//						if(solver.contains(s)) {
+//							s2 = "~" + s;
+//							s2 = s2.replace(" ", "");
+//						} else {
+//							s="";
+//						}
+//					}
 //					Replace with String	 
 //					If there are more OR's, I need to replace entirely with new string
 					int orCountSolver = solver.length() - solver.replace("|", "").length();
@@ -306,65 +320,74 @@ public class Main {
 					if(orCountSolver < orCountString) {
 						solver = getPackageName;
 					} else {
-						solver = solver.replace(pack.name+pack.dotlessVersion, getPackageName); 
+//						System.out.println("before rep of " + pack.name + " " + solver.replace("version999", "="));
+						solver = solver.replace(" " + pack.name+pack.dotlessVersion, " " + getPackageName); 
+//						System.out.println("after rep " + solver.replace("version999", "="));
 					}
-					
+//					
 //					Check to replace for negatives
 					if(solver.contains(checkNeg)) {
 						solver = solver.replace(checkNeg, replaceNeg);
 //						Remove double negatives
 						solver = solver.replace("~~", "~");
 					}
-
-//					TODO Possible issue if there is no " | " I don't know how it will react
 					String[] check = solver.split("\\|");
 					
-						for (int j = 0; j < check.length; j++) {
-							if(!(s.trim().equals(""))) {
-//								Get Opposite
-								String getNegative = "";
-								String getPositive = "";
-								if(s.contains("~")) {
-									getPositive = s.replace("~", "");
-									getNegative = s;
-								} else {
-									getPositive = s;
-									getNegative = "~"+s.trim();
-								}
+//						for (int j = 0; j < check.length; j++) {
+//							if(!(s.trim().equals(""))) {
+////								Get Opposite
+//								String getNegative = "";
+//								String getPositive = "";
+//								if(s.contains("~")) {
+//									getPositive = s.replace("~", "");
+//									getNegative = s;
+//								} else {
+//									getPositive = s;
+//									getNegative = "~"+s.trim(); 
+//								}
 //							If there are 2 positives, then it needs to install the same thing to get it which is circular dependency
-											
-							if(check[j].contains(getPositive) && !check[j].contains(getNegative)) {
-								String replace = check[j] + "| ";
-								if(j >= check.length-1) {
-									replace = "|" + check[j];
-								}
-								solver = solver.replace(replace, "");
-							}
-						}
-					}
-					if(!(s.trim().equals(""))) {
-//						Replacing dependencies
-						solver = solver.replace(s2, s);
-					}
+//							getPositive = getPositive.trim();
+//							int dupeSolver = (check[j].length() - check[j].replace(getPositive, "").length()) - getPositive.length();
+//							System.out.println(" Check " + check[j].replace(getPositive, ""));
+//							System.out.println("Val " + dupeSolver);
+//							if(check[j].contains(getPositive) && !check[j].contains(getNegative) && dupeSolver>0 ) {
+////							if(dupeSolver > 0) {
+////								System.out.println("posNeg" + getPositive + " " + getNegative);
+//								String replace = check[j] + "| ";
+//								if(j >= check.length-1) {
+//									replace = "|" + check[j];
+//								}
+////								System.out.println("What am i removing: " + replace.replace("version999", "="));
+////								System.out.println("ONE" + solver.replace("version999", "="));
+//								solver = solver.replace(replace, "");
+////								System.out.println("TWO" + solver.replace("version999", "="));
+//							}
+//						}
+//					}
+//					System.out.println("Step4" + solver.replace("version999", "="));
+//					if(!(s.trim().equals(""))) {
+////						Replacing dependencies
+//						solver = solver.replace(s2, s);
+//					}
 				}
 			}
 //			Simplify
 			FormulaFactory f = new FormulaFactory();
 			PropositionalParser p = new PropositionalParser(f);
 			Formula temp = null;
-//			System.out.println("What booleans do I get " + solver);
+//			System.out.println("What booleans do I get " + solver.replace("version999", "="));
 //			solver = solver.replace(".", "");
-			try { 
-				temp = p.parse(solver);
-			} catch (ParserException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			if(temp == null) {
-				System.out.println("Error");
-			} else {
-				solver = temp.toString();
-			}
+//			try { 
+//				temp = p.parse(solver);
+//			} catch (ParserException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//			if(temp == null) {
+//				System.out.println("Error");
+//			} else {
+//				solver = temp.toString();
+//			}
 			
 			HashMap<String, List<Package>> getNewResults = new HashMap<>();
 			getNewResults.put(solver, getPackages);
@@ -420,6 +443,8 @@ public class Main {
 						}
 		    			packagesToInstall.add(getPackage);
 					}
+		    		
+		    		
 		    		
 //		    		Adding packages to uninstall
 
@@ -478,21 +503,17 @@ public class Main {
 		    		for (Package toInstall : packagesToInstall) {
 						getSize += toInstall.checkInstall(getSize);
 					}
+		    		
+//		    		finalPackages
+		    		
 //		    		result = result.deleteCharAt(result.length()-2);
 //		    		result.append("]");
 //		    		System.out.println(result);
 
 //		    		Get best name
 //		    		System.out.println("To Install" + packagesToInstall);
-		    		if(lowestSize == 0) {
-		    			lowestSize = getSize;
-		    			finalPackages = packagesToInstall;
-		    		} else {
-		    			if (lowestSize > getSize) {
-		    				lowestSize = getSize;
-		    				finalPackages = packagesToInstall;
-		    			}
-		    		}
+		    		topoSort(getSize);
+		    
 //		    		System.out.println(finalPackages);
 //		    		System.out.println(getSize);
 		    	}
@@ -505,12 +526,13 @@ public class Main {
 	
 	private static DefaultDirectedGraph<String, DefaultEdge> createGraph() {
 		DefaultDirectedGraph<String, DefaultEdge> finalGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
-		
-		for (Package pack : finalPackages) {
+//		System.out.println("Reach");
+//		System.out.println(packagesToInstall);
+		for (Package pack : packagesToInstall) {
 			finalGraph.addVertex(pack.name + "=" + pack.version);
 		}
 		
-		for (Package pack : finalPackages) {
+		for (Package pack : packagesToInstall) {
 			for (int i = 0; i < pack.dependantSet.size(); i++) {
 				for (int j = 0; j < pack.dependantSet.get(i).size(); j++) {
 					Package depPack = pack.dependantSet.get(i).get(j);
@@ -524,13 +546,14 @@ public class Main {
 		return finalGraph;
 	}
 	
-	public static void topoSort() {
+	public static void topoSort(int getSize) {
+//		System.out.println("Does it reach");
 		DefaultDirectedGraph<String, DefaultEdge> finalGraph = createGraph();
 		TopologicalOrderIterator<String, DefaultEdge> order;
 		CycleDetector<String, DefaultEdge> cycleDetector;
 		
 		cycleDetector = new CycleDetector<String, DefaultEdge>(finalGraph);
-		
+		StringBuilder currResult = new StringBuilder();
 //		Just in case
 		if (cycleDetector.detectCycles()) {
 //			Circular dependency
@@ -548,25 +571,35 @@ public class Main {
 				topoOrder.add(currLocation);
 			}
 			
-			StringBuilder finalResult = new StringBuilder();
-			finalResult.append("[");
+			
+			currResult.append("[");
 
 			if(packagesToUninstall!=null) {
 				
 				for(Package p : packagesToUninstall) {
-					finalResult = finalResult.append('"').append("-").append(p.name).append("=").append(p.version).append('"').append(",\n");
+					currResult = currResult.append('"').append("-").append(p.name).append("=").append(p.version).append('"').append(",\n");
 				}
 			}
 			
 			for(int i = topoOrder.size() - 1; i >= 0; i--) {
-				finalResult = finalResult.append('"').append("+").append(topoOrder.get(i)).append('"').append(",");
+				currResult = currResult.append('"').append("+").append(topoOrder.get(i)).append('"').append(",");
 				
 			}
 //			If its empty brackets, just let them be
-			if(finalResult.length() > 1)
-				finalResult = finalResult.deleteCharAt(finalResult.length()-1);
-			finalResult.append("]");
-			System.out.println(finalResult);
+			if(currResult.length() > 1)
+				currResult = currResult.deleteCharAt(currResult.length()-1);
+			currResult.append("]");
+			
+			if(lowestSize == 0) {
+    			lowestSize = getSize;
+    			finalResult = currResult;
+    		} else {
+    			if (lowestSize > getSize) {
+    				lowestSize = getSize;
+    				finalResult = currResult;
+    			}
+    		}
+		
 		}
 	}
 	
