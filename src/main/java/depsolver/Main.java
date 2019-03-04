@@ -50,9 +50,12 @@ public class Main {
 	
 	private static int lowestSize;
 	
-	private static String finalResult;
+//	private static String finalResult;
 	
 	private static List<Package> finalPackages = new ArrayList<>();
+	
+	private static List<Package> packagesToInstall;
+	private static List<Package> packagesToUninstall;
 	
 	public static void main(String[] args) throws IOException, ParserException {
 		String repo = readFile(args[0]);
@@ -93,9 +96,9 @@ public class Main {
 			temp.add(p);							
 		}
 		startRun(tasksMap, toInstallArr);
-		createGraph();
+//		System.out.println(packagesToUninstall);
+		topoSort();
 //		System.out.println(finalResult);
-//		System.out.println(lowestSize);
 		
 	}
 	
@@ -386,8 +389,9 @@ public class Main {
 		    for (Assignment assignment : allPossibleResults) {
 		    	if(assignment.size() > 0) {
 //		    		System.out.println(assignment.literals());
-			    	List<Package> packagesToInstall = new ArrayList<>();
-			    	List<Package> packagesToUninstall = new ArrayList<>();
+			    	packagesToInstall = new ArrayList<>();
+			    	packagesToUninstall = new ArrayList<>();
+//			    	System.out.println(packagesToUninstall);
 		    		Package getPackage = null;
 		    		String[] posLit = assignment.positiveLiterals().toString().replace("[", "").replace("]", "").split(",");
 		    		
@@ -438,7 +442,8 @@ public class Main {
 	    							String checkC = checkConflict.name+checkConflict.dotlessVersion;
 	    							String compareC = getPackage.name+getPackage.dotlessVersion;
 									if(checkC.equals(compareC)) {
-										packagesToUninstall.add(getPackage);
+										if(getPackage.done==true)
+											packagesToUninstall.add(getPackage);
 									}
 								}
 	    					}
@@ -446,8 +451,8 @@ public class Main {
 					}
 
 		    		
-		    		StringBuilder result = new StringBuilder();
-		    		result.append("[");
+//		    		StringBuilder result = new StringBuilder();
+//		    		result.append("[");
 		    		
 		    		
 		    		
@@ -455,36 +460,38 @@ public class Main {
 		            int size = packagesToInstall.size();
 		            for (int i = 0; i < size / 2; i++) {
 		                final Package pack = packagesToInstall.get(i);
-		                packagesToInstall.set(i, packagesToInstall.get(size - i - 1)); // swap
-		                packagesToInstall.set(size - i - 1, pack); // swap
+		                packagesToInstall.set(i,packagesToInstall.get(size-i-1));
+		                packagesToInstall.set(size-i-1, pack);
 		            }
 		            
 		            int getSize = 0;
 //		    		packagesToInstall.reverse();
 		    		for (Package toUninstall : packagesToUninstall) {
 //		    			System.out.println(getSize);
-						getSize += toUninstall.checkUninstall(result, getSize);
+//		    			System.out.println("uninstall " + toUninstall);
+						getSize += toUninstall.checkUninstall(getSize);
+//						System.out.println(result);
 						
 					}
 		    		for (Package toInstall : packagesToInstall) {
-						getSize += toInstall.checkInstall(result, getSize);
+						getSize += toInstall.checkInstall(getSize);
 					}
-		    		result = result.deleteCharAt(result.length()-2);
-		    		result.append("]");
+//		    		result = result.deleteCharAt(result.length()-2);
+//		    		result.append("]");
 //		    		System.out.println(result);
+
 //		    		Get best name
 		    		if(lowestSize == 0) {
 		    			lowestSize = getSize;
-		    			finalResult = result.toString();
 		    			finalPackages = packagesToInstall;
 		    		} else {
 		    			if (lowestSize > getSize) {
 		    				lowestSize = getSize;
-		    				finalResult = result.toString();
 		    				finalPackages = packagesToInstall;
 		    			}
 		    		}
-		    		
+//		    		System.out.println(finalPackages);
+//		    		System.out.println(getSize);
 		    	}
 			}
 		} catch (ParserException e) {
@@ -510,11 +517,52 @@ public class Main {
 				}
 			}
 		}
-		System.out.println(finalGraph);
+//		System.out.println(finalGraph);
 		return finalGraph;
 	}
 	
-	
+	public static void topoSort() {
+		DefaultDirectedGraph<String, DefaultEdge> finalGraph = createGraph();
+		TopologicalOrderIterator<String, DefaultEdge> order;
+		CycleDetector<String, DefaultEdge> cycleDetector;
+		
+		cycleDetector = new CycleDetector<String, DefaultEdge>(finalGraph);
+		
+//		Just in case
+		if (cycleDetector.detectCycles()) {
+//			Circular dependency
+			return;
+		} else {
+			order = new TopologicalOrderIterator<String, DefaultEdge>(finalGraph);
+			String currLocation;
+			
+			
+			List<String> topoOrder = new ArrayList<>();
+			while(order.hasNext())
+			{
+				String nextVal = order.next();
+				currLocation = nextVal;
+				topoOrder.add(currLocation);
+			}
+			
+			StringBuilder finalResult = new StringBuilder();
+			finalResult.append("[");
+			if(packagesToUninstall.size() > 0) {
+				for(Package p : packagesToUninstall) {
+					finalResult = finalResult.append('"').append("-").append(p.name).append("=").append(p.version).append('"').append(",\n");
+				}
+			}
+			
+			for(int i = topoOrder.size() - 1; i >= 0; i--) {
+				finalResult = finalResult.append('"').append("+").append(topoOrder.get(i)).append('"').append(",");
+				
+			}
+			
+			finalResult = finalResult.deleteCharAt(finalResult.length()-1);
+			finalResult.append("]");
+			System.out.println(finalResult);
+		}
+	}
 	
 //	Checks which packages to run and starts running them
 	public static void startRun(Map<String, SortedSet<Package>> tasksMap, String[] toInstallArr) {

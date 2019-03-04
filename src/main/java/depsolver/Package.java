@@ -259,19 +259,19 @@ class Package {
 //		}
 //	}
 	
-	public int checkInstall(StringBuilder result, int addSize) {
+	public int checkInstall(int addSize) {
 		if(this.done == true) return addSize;
 //		this.done = true;
-		result.append('"').append("+").append(this.name).append(this.symbol).append(this.version).append('"').append(",").append("\n");;
+//		result.append('"').append("+").append(this.name).append(this.symbol).append(this.version).append('"').append(",").append("\n");;
 		return addSize += this.getSize();
 	}
 	
-	public int checkUninstall(StringBuilder result, int addSize) {
+	public int checkUninstall(int addSize) {
 //		System.out.println(this.name+this.dotlessVersion);
 //		System.out.println(addSize);
 		if(this.done == false) return addSize;
 //		this.done = false;
-		result.append('"').append("-").append(this.name).append(this.symbol).append(this.version).append('"').append(",").append("\n");
+//		result.append('"').append("-").append(this.name).append(this.symbol).append(this.version).append('"').append(",").append("\n");
 		return addSize += 1000000;
 	}
 	
