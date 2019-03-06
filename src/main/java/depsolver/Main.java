@@ -88,22 +88,49 @@ public class Main {
 			temp.add(p);							
 		}
 		startRun(tasksMap, toInstallArr);
-
+//		System.out.println(compareStrings("1", "2"));
 		System.out.println(finalResult);
 		
 	}
 	
-	  static String readFile(String filename) throws IOException {
+
+	
+	private static String readFile(String filename) throws IOException {
 		    BufferedReader br = new BufferedReader(new FileReader(filename));
 		    StringBuilder sb = new StringBuilder();
 		    br.lines().forEach(line -> sb.append(line));
 		    return sb.toString();	
-	  }
+	 }
 	
 	private static JsonElement parseJson(String text) throws FileNotFoundException {
 		JsonParser parser = new JsonParser();
 		JsonElement rootElement = parser.parse(text);
 		return rootElement;
+	}
+	
+	private static int compareStrings(String x, String y) {
+
+		List<String> x1 = Arrays.asList(x.split("\\."));
+		List<String> y1 = Arrays.asList(y.split("\\."));
+
+        int[] x2 = x1.stream().mapToInt(Integer::parseInt).toArray();
+        int[] y2 = y1.stream().mapToInt(Integer::parseInt).toArray();
+		
+		int size = Math.min(x2.length, y2.length);
+		int i = 0;
+		for (; i < size; i++) {
+			int result = Integer.compare(x2[i], y2[i]);
+			if (result != 0) {
+				return result;
+			}
+		}
+		
+		if (x2.length > i ) {
+			return 1;
+		} else if (y2.length > i) {
+			return -1;
+		}
+		return 0;
 	}
 	
 //	Add dependencies and constraints
@@ -126,7 +153,7 @@ public class Main {
                 for (int j = 0; j < allTasks.size(); j++) {
                     Package tempTask = allTasks.get(j);
                     if(tempTask.name.equals(name)) {
-                        int result = tempTask.version.compareTo(version);
+                        int result = compareStrings(tempTask.version,version);
                         if(symbol.equals("=")) {
                             combinedDependants.add(tempTask);
                         }
@@ -461,6 +488,8 @@ public class Main {
 		
 		}
 	}
+	
+	
 	
 //	Checks which packages to run and starts running them
 	public static void startRun(Map<String, SortedSet<Package>> tasksMap, String[] toInstallArr) {
