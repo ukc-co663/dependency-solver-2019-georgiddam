@@ -15,9 +15,6 @@ class Package {
 	String size;
 	
 	String dotlessVersion;
-//	boolean visited = false;
-	
-//	StringBuilder solver = new StringBuilder();
 	
 	String[][] depends;
 	
@@ -38,7 +35,6 @@ class Package {
 		this.symbol = symbol;
 		this.size = size;
 		init();
-		
 	} 
 	
 	public void init() {
@@ -64,13 +60,12 @@ class Package {
 	}
 	
 	public void addConflict(Package conflict) {
-		conflictsSet.add(conflict);
+		conflictsSet.add(conflict); 
 	}
 	
 	public HashMap<String, List<Package>> addToBooleanString(String trackString) {
 		
 		boolean addedSingle = false;
-		
 		String convertToBool = "";
 		List<Package>collectAllNext = new ArrayList<>();
 		HashMap<String, List<Package>> toReturn = new HashMap<>(); 
@@ -87,7 +82,6 @@ class Package {
 		}
 	
 //		Creating my dependency list
-//		System.out.println("Check");
 		for (int i = 0; i < this.dependantSet.size(); i++) { 
 
 			int size = this.dependantSet.get(i).size();
@@ -96,7 +90,6 @@ class Package {
 			
 			for (int j = 0; j < this.dependantSet.get(i).size(); j++) {
 				Package getPackage = dependantSet.get(i).get(j);
-//				System.out.println("Check Pack" + getPackage);
 				collectAllNext.add(getPackage);
 				storeAll[j] = getPackage.name+getPackage.dotlessVersion; 
 			}
@@ -122,17 +115,12 @@ class Package {
 					int j = 0;
 					convertToBool += trackString;
 					int followNot = 0;
-					for (; j < storeAll.length; j++) {
-//						This is the OR's because they are the same dependencies
-						
+					for (; j < storeAll.length; j++) {		
 						if (followNot != k) {
 							convertToBool += " & ~";
 							convertToBool += (dependantSet.get(i).get(j).name+dependantSet.get(i).get(j).dotlessVersion);
 							followNot ++;
-						} else {
-						
-//							System.out.println("What do i get here" + dependantSet.get(i).get(j));
-							
+						} else {						
 							convertToBool += " & ";
 							convertToBool += (dependantSet.get(i).get(j).name+dependantSet.get(i).get(j).dotlessVersion);
 							followNot ++;
@@ -140,143 +128,30 @@ class Package {
 					}
 					if(k<storeAll.length-1)
 						convertToBool += " | ";
-					
-//					
 				}
 				if(i+1 < this.dependantSet.size()) {
 					convertToBool += " & ";
 				}
 			}
-		}
-//		System.out.println("Name: " + this);
-//		System.out.println(convertToBool.replace("version999", "="));
-//		Conflicts
+		} 
+//		Conflicts 
 		Iterator<Package> itr = conflictsSet.iterator();
 		while(itr.hasNext()) {
 			Package nextVal = itr.next();
 			 convertToBool += (" & ~");
-			 convertToBool += (nextVal.name+nextVal.dotlessVersion); 
+			 convertToBool += (nextVal.name+nextVal.dotlessVersion);  
 		}
-//		System.out.println("Converted : this " + convertToBool + " : " + this.name); 
 		toReturn.put(convertToBool,  collectAllNext);
-		return toReturn;
+		return toReturn; 
 	}
-
-	
-	
-//	public boolean checkDependencies(StringBuilder result) {
-//		for (int i = 0; i < dependantSet.size(); i++) {
-//			int biggerSize = Integer.MAX_VALUE;
-//			Package toRun = this;
-//			boolean hasPriority = false;
-//			for (int j = 0; j < dependantSet.get(i).size(); j++) {
-////				If some package is already chosen
-//				if (!hasPriority && dependantSet.get(i).get(j).dependantSet.size() == 0) {
-//					if(toRun.conflictsSet.size() > dependantSet.get(i).get(j).conflictsSet.size()) {
-//						biggerSize = dependantSet.get(i).get(j).getSize();
-//						toRun = dependantSet.get(i).get(j);
-//					}
-//					if (biggerSize > dependantSet.get(i).get(j).getSize()) {
-//						biggerSize = dependantSet.get(i).get(j).getSize();
-//						toRun = dependantSet.get(i).get(j);
-//					}
-//				}
-////				Base cases
-////				If it has no dependencies, use that
-//				else if (dependantSet.get(i).get(j).dependantSet.size() == 0) {
-//					hasPriority = true;
-//					biggerSize = dependantSet.get(i).get(j).getSize();
-//					toRun = dependantSet.get(i).get(j);
-//					
-////					If it has no conflicts
-//				} else if (dependantSet.get(i).get(j).conflictsSet.size() == 0){
-//					hasPriority = true;
-//					biggerSize = dependantSet.get(i).get(j).getSize();
-//					toRun = dependantSet.get(i).get(j);
-////					If it has lowest size
-//				} else if (biggerSize > dependantSet.get(i).get(j).getSize())  {
-//					biggerSize = dependantSet.get(i).get(j).getSize();
-//					toRun = dependantSet.get(i).get(j);
-//					hasPriority = false;
-//				}
-//			}
-//			toRun.run(result);
-//		}
-//		return false;
-//	}
-	
-//	public boolean checkConflicts(StringBuilder result) {
-//		Iterator<Package> itr = conflictsSet.iterator();
-//		boolean toBreak = false;
-//		while(itr.hasNext()) {
-//			Package nextVal = itr.next();
-//			if(nextVal.done != false) {
-//				if(!nextVal.isRequired) {
-//					nextVal.uninstall(result);
-//					toBreak = false;
-//				} else {
-//					toBreak = true;
-//				}
-//			} else {
-//				toBreak = false;;
-//			}
-//			if (toBreak) {
-////				Exit the loop, return false
-//				break;
-//			}
-//		}
-//		return toBreak;
-//	}
-	
-//	public boolean run(StringBuilder result) {
-//		if(this.done == true) return true;
-////		If no dependencies and no conflicts, install module
-//		boolean hasConflict = true;
-//		boolean hasDepend = true;
-////		if no conflicts and no dependencies
-//		if(this.conflictsSet.size() < 1 && this.dependantSet.size() < 1) {
-//			this.isRequired = true;
-//			this.done = true;
-//			result.append("+").append(this.name).append(this.symbol).append(this.version).append("\n");
-//			return true;
-//		}
-////		If has conflicts, check if conflicts are installed, if they are, uninstall
-//		if (this.conflictsSet.size() > 0) {
-//			hasConflict = checkConflicts(result);
-//		} else {
-//			hasConflict = false;
-//		}
-////		We already checked for conflicts, now we check if there are dependents to install those
-//		if(this.dependantSet.size() > 0) {
-//			hasDepend = checkDependencies(result);
-//		} else {
-//			hasDepend = false;
-//		}
-//		
-//		if (!hasDepend && !hasConflict) {
-//			this.isRequired = true;
-//			this.done = true;
-//			result.append("+").append(this.name).append(this.symbol).append(this.version).append("\n");
-//			return true;
-//		} else {
-//			System.out.println("Broken");
-//			return false;
-//		}
-//	}
 	
 	public int checkInstall(int addSize) {
 		if(this.done == true) return addSize;
-//		this.done = true;
-//		result.append('"').append("+").append(this.name).append(this.symbol).append(this.version).append('"').append(",").append("\n");;
 		return addSize += this.getSize();
 	}
 	
 	public int checkUninstall(int addSize) {
-//		System.out.println(this.name+this.dotlessVersion);
-//		System.out.println(addSize);
 		if(this.done == false) return addSize;
-//		this.done = false;
-//		result.append('"').append("-").append(this.name).append(this.symbol).append(this.version).append('"').append(",").append("\n");
 		return addSize += 1000000;
 	}
 	
