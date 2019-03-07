@@ -315,6 +315,7 @@ public class Main {
 	}
 	
 	public static void getResults(String finalAnswer) {
+//		System.out.println("Answer before formula " + finalAnswer);
 		final FormulaFactory f = new FormulaFactory();
 		final PropositionalParser p = new PropositionalParser(f);
 		Formula formula;
@@ -323,7 +324,7 @@ public class Main {
 		    final SATSolver miniSat = MiniSat.miniSat(f);
 		    miniSat.add(formula);
 		    List<Assignment> allPossibleResults = miniSat.enumerateAllModels();
-		   
+//		    System.out.println("Formula " + formula);
 		    for (Assignment assignment : allPossibleResults) {
 		    	if(assignment.size() > 0) {
 			    	packagesToInstall = new ArrayList<>();
@@ -507,12 +508,30 @@ public class Main {
 				String tempInstall = m.group(1);
 				String tempPackageName = m.group(2);
 				SortedSet<Package> tempPackage = tasksMap.get(tempPackageName);
+				SortedSet<Package> tempPack = new TreeSet(PackageVersionComparator);
+//				System.out.println("Test");
+				if (m.group(4)!= null) {
+					for (Package p : tempPackage) {
+//						System.out.println(p.version);
+						if(p.version.equals(m.group(4))) {
+//							System.out.println(p);
+							tempPack.add(p);
+						}
+					}
+				}
+				if(!tempPack.isEmpty()) {
+					tempPackage = tempPack;
+				}
+//				System.out.println(tempPackage);
 				boolean isSameVal = false;
 				boolean ifExecuted = false;
 //				TODO again, create a list of all the possible values, check which one has more/less dependencies to run that one
 				for (Package p : tempPackage) {
 					collectAllNext.add(p);
-					
+//					System.out.println(tempPackage.size());
+//					System.out.println("p" + p);
+//					System.out.println(ifExecuted);
+//					System.out.println(tempString);
 					if(isSameVal && !ifExecuted) {
 						tempString = tempString.substring(0, tempString.length()-2);
 						tempString += " | ";
@@ -535,8 +554,9 @@ public class Main {
 					isSameVal = true;
 				}
 			}
-		}
+		}		
 				tempString = tempString.substring(0, tempString.length()-2);
+//				System.out.println(tempString);
 				
 				toReturn.put(tempString,  collectAllNext);
 				expandString(toReturn);
